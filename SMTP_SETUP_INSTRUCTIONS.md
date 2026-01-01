@@ -17,6 +17,7 @@ Your Brevo account is ready. Below are the environment variables that need to be
 | `SMTP_USER` | `9f1f7f001@smtp-brevo.com` |
 | `SMTP_PASS` | `6Pva8BMKnOcqUfkR` |
 | `EMAIL_FROM_NAME` | `ebe` |
+| `EMAIL_FROM_ADDRESS` | `boluwaji@iwewa.com` |
 
 3. After adding all variables, redeploy your app
 
@@ -33,6 +34,7 @@ echo "false" | npx vercel env add SMTP_SECURE production
 echo "9f1f7f001@smtp-brevo.com" | npx vercel env add SMTP_USER production
 echo "6Pva8BMKnOcqUfkR" | npx vercel env add SMTP_PASS production
 echo "ebe" | npx vercel env add EMAIL_FROM_NAME production
+echo "boluwaji@iwewa.com" | npx vercel env add EMAIL_FROM_ADDRESS production
 
 # Redeploy
 npx vercel --prod
