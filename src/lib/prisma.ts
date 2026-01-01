@@ -3,7 +3,9 @@ import { PrismaPg } from '@prisma/adapter-pg'
 import { Pool } from 'pg'
 
 // For Prisma Postgres, we need to use the pg adapter
-// The DATABASE_URL format is: prisma+postgres://localhost:51213/?api_key=...
+// The DATABASE_URL format can be:
+// - prisma+postgres://localhost:51213/?api_key=... (local dev)
+// - postgresql://user:pass@host/db (production)
 const connectionString = process.env.DATABASE_URL || ''
 
 // Prisma Postgres stores the actual PostgreSQL connection in the api_key parameter
@@ -24,12 +26,16 @@ if (connectionString.startsWith('prisma+postgres://')) {
   }
 }
 
-// Create connection pool and adapter
-const pool = new Pool({ connectionString: pgConnectionString })
-const adapter = new PrismaPg(pool)
-
 // Create Prisma Client with adapter
 const prismaClientSingleton = () => {
+  // Only create pool and adapter if we have a connection string
+  if (!pgConnectionString) {
+    console.warn('No DATABASE_URL found, Prisma Client will not connect')
+    return new PrismaClient()
+  }
+
+  const pool = new Pool({ connectionString: pgConnectionString })
+  const adapter = new PrismaPg(pool)
   return new PrismaClient({ adapter })
 }
 
