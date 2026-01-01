@@ -31,7 +31,7 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
     }
 
     const info = await transporter.sendMail({
-      from: `"${process.env.EMAIL_FROM_NAME || 'ebe'}" <${process.env.SMTP_USER}>`,
+      from: `"${process.env.EMAIL_FROM_NAME || 'ebe'}" <${process.env.EMAIL_FROM_ADDRESS || process.env.SMTP_USER}>`,
       to: options.to,
       subject: options.subject,
       text: options.text,
