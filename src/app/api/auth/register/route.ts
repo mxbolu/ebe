@@ -15,7 +15,7 @@ const registerSchema = z.object({
       'Username can only contain letters, numbers, and underscores'
     ),
   password: z.string().min(8, 'Password must be at least 8 characters'),
-  name: z.string().optional(),
+  name: z.string().min(1, 'Full name is required'),
 })
 
 export async function POST(request: NextRequest) {
@@ -72,7 +72,7 @@ export async function POST(request: NextRequest) {
         email,
         username,
         password: hashedPassword,
-        name: name || null,
+        name,
         role: 'USER',
       },
       select: {
