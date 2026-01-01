@@ -88,7 +88,6 @@ export async function GET(request: NextRequest) {
             genres: true,
           },
         },
-        progress: true,
       },
       orderBy,
       take: limit,
@@ -193,18 +192,6 @@ export async function POST(request: NextRequest) {
         },
       },
     })
-
-    // Create reading progress if status is CURRENTLY_READING
-    if (data.status === 'CURRENTLY_READING' && book.pageCount) {
-      await prisma.readingProgress.create({
-        data: {
-          readingEntryId: entry.id,
-          currentPage: 0,
-          totalPages: book.pageCount,
-          progressPercentage: 0,
-        },
-      })
-    }
 
     return NextResponse.json({ entry }, { status: 201 })
   } catch (error) {

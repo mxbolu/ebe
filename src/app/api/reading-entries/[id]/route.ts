@@ -33,7 +33,6 @@ export async function GET(
       where: { id },
       include: {
         book: true,
-        progress: true,
       },
     })
 
@@ -141,27 +140,8 @@ export async function PATCH(
             pageCount: true,
           },
         },
-        progress: true,
       },
     })
-
-    // Create or update reading progress if status changed to CURRENTLY_READING
-    if (data.status === 'CURRENTLY_READING' && existingEntry.book.pageCount) {
-      const existingProgress = await prisma.readingProgress.findUnique({
-        where: { readingEntryId: id },
-      })
-
-      if (!existingProgress) {
-        await prisma.readingProgress.create({
-          data: {
-            readingEntryId: id,
-            currentPage: 0,
-            totalPages: existingEntry.book.pageCount,
-            progressPercentage: 0,
-          },
-        })
-      }
-    }
 
     return NextResponse.json({ entry }, { status: 200 })
   } catch (error) {
