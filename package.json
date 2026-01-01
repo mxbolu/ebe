@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "prisma generate && next build",
     "start": "next start",
     "lint": "next lint",
     "db:seed": "tsx prisma/seed.ts",
@@ -13,8 +13,7 @@
     "import:books:fast": "tsx src/scripts/bulk-import-books-optimized.ts",
     "import:goodreads": "tsx src/scripts/goodreads-import.ts",
     "import:test": "node src/scripts/test-import.mjs",
-    "check:deploy": "node scripts/check-deployment-ready.js",
-    "postbuild": "prisma generate"
+    "check:deploy": "node scripts/check-deployment-ready.js"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
