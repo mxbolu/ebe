@@ -43,7 +43,7 @@ export default function BookSearch() {
       }
 
       const data = await response.json()
-      setBooks(data.books || [])
+      setBooks(data.results || [])
     } catch (err) {
       setError('Failed to search books. Please try again.')
       console.error('Search error:', err)
