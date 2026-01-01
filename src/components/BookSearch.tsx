@@ -61,7 +61,7 @@ export default function BookSearch() {
       <div>
         <h2 className="text-2xl font-bold text-gray-900 mb-2">Find Books</h2>
         <p className="text-gray-600">
-          Search our database or discover new books from multiple sources
+          Search our database of 90,000+ books from multiple sources
         </p>
       </div>
 
