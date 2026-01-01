@@ -93,8 +93,13 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    // Send verification email
-    await sendVerificationEmail(email, name, otp)
+    // Send verification email (don't fail registration if email fails)
+    try {
+      await sendVerificationEmail(email, name, otp)
+    } catch (emailError) {
+      console.error('Failed to send verification email:', emailError)
+      // Continue with registration even if email fails
+    }
 
     // Generate JWT token
     const token = generateToken({
@@ -127,8 +132,15 @@ export async function POST(request: NextRequest) {
     return response
   } catch (error) {
     console.error('Registration error:', error)
+
+    // Provide more specific error message in development
+    const errorMessage = error instanceof Error ? error.message : 'Failed to register user'
+
     return NextResponse.json(
-      { error: 'Failed to register user' },
+      {
+        error: 'Failed to register user',
+        details: process.env.NODE_ENV === 'development' ? errorMessage : undefined
+      },
       { status: 500 }
     )
   }
