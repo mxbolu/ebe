@@ -18,6 +18,15 @@ const createEntrySchema = z.object({
 /**
  * GET /api/reading-entries
  * Get all reading entries for the authenticated user
+ *
+ * Query parameters:
+ * - status: Filter by status (WANT_TO_READ, CURRENTLY_READING, FINISHED, DID_NOT_FINISH)
+ * - isFavorite: Filter favorites (true/false)
+ * - hasRating: Filter entries with ratings (true/false)
+ * - sortBy: Sort field (updatedAt, createdAt, rating, title)
+ * - sortOrder: Sort order (asc, desc) - default: desc
+ * - limit: Number of results (default: 20)
+ * - offset: Skip results (default: 0)
  */
 export async function GET(request: NextRequest) {
   const authResult = authenticateRequest(request)
@@ -27,14 +36,42 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
 
   const status = searchParams.get('status')
+  const isFavorite = searchParams.get('isFavorite')
+  const hasRating = searchParams.get('hasRating')
+  const sortBy = searchParams.get('sortBy') || 'updatedAt'
+  const sortOrder = (searchParams.get('sortOrder') || 'desc') as 'asc' | 'desc'
   const limit = parseInt(searchParams.get('limit') || '20')
   const offset = parseInt(searchParams.get('offset') || '0')
 
   try {
     const where: any = { userId: user.userId }
 
+    // Filter by status
     if (status) {
       where.status = status
+    }
+
+    // Filter by favorite
+    if (isFavorite !== null && isFavorite !== undefined) {
+      where.isFavorite = isFavorite === 'true'
+    }
+
+    // Filter by has rating
+    if (hasRating === 'true') {
+      where.rating = { not: null }
+    } else if (hasRating === 'false') {
+      where.rating = null
+    }
+
+    // Determine sort order
+    let orderBy: any = { updatedAt: sortOrder }
+
+    if (sortBy === 'createdAt') {
+      orderBy = { createdAt: sortOrder }
+    } else if (sortBy === 'rating') {
+      orderBy = { rating: sortOrder }
+    } else if (sortBy === 'title') {
+      orderBy = { book: { title: sortOrder } }
     }
 
     const entries = await prisma.readingEntry.findMany({
@@ -48,11 +85,12 @@ export async function GET(request: NextRequest) {
             coverImageUrl: true,
             publishedYear: true,
             pageCount: true,
+            genres: true,
           },
         },
         progress: true,
       },
-      orderBy: { updatedAt: 'desc' },
+      orderBy,
       take: limit,
       skip: offset,
     })
