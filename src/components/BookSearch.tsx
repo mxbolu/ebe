@@ -43,6 +43,9 @@ export default function BookSearch() {
       }
 
       const data = await response.json()
+      console.log('Search API Response:', data)
+      console.log('Results array:', data.results)
+      console.log('Number of results:', data.results?.length)
       setBooks(data.results || [])
     } catch (err) {
       setError('Failed to search books. Please try again.')
