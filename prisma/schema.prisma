@@ -63,6 +63,15 @@ model User {
   role              UserRole  @default(USER)
   showContributions Boolean   @default(true) // opt-in/out of credit
 
+  // Email verification
+  isEmailVerified   Boolean   @default(false)
+  verificationOTP   String?
+  verificationOTPExpiry DateTime?
+
+  // Password reset
+  resetOTP          String?
+  resetOTPExpiry    DateTime?
+
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 

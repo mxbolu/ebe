@@ -3,6 +3,7 @@ import { z } from 'zod'
 import prisma from '@/lib/prisma'
 import { hashPassword, validatePasswordStrength } from '@/lib/auth/password'
 import { generateToken } from '@/lib/auth/jwt'
+import { generateOTP, sendVerificationEmail } from '@/lib/email/service'
 
 const registerSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -66,6 +67,10 @@ export async function POST(request: NextRequest) {
     // Hash password
     const hashedPassword = await hashPassword(password)
 
+    // Generate verification OTP
+    const otp = generateOTP()
+    const otpExpiry = new Date(Date.now() + 15 * 60 * 1000) // 15 minutes
+
     // Create user
     const user = await prisma.user.create({
       data: {
@@ -74,6 +79,8 @@ export async function POST(request: NextRequest) {
         password: hashedPassword,
         name,
         role: 'USER',
+        verificationOTP: otp,
+        verificationOTPExpiry: otpExpiry,
       },
       select: {
         id: true,
@@ -81,9 +88,13 @@ export async function POST(request: NextRequest) {
         username: true,
         name: true,
         role: true,
+        isEmailVerified: true,
         createdAt: true,
       },
     })
+
+    // Send verification email
+    await sendVerificationEmail(email, name, otp)
 
     // Generate JWT token
     const token = generateToken({
@@ -96,9 +107,10 @@ export async function POST(request: NextRequest) {
     // Create response with token in cookie
     const response = NextResponse.json(
       {
-        message: 'User registered successfully',
+        message: 'User registered successfully. Please check your email for verification code.',
         user,
         token,
+        requiresVerification: true,
       },
       { status: 201 }
     )

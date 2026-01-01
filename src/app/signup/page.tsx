@@ -35,8 +35,8 @@ export default function SignupPage() {
         return
       }
 
-      // Redirect to dashboard or home
-      router.push('/')
+      // Redirect to email verification page
+      router.push(`/verify-email?email=${encodeURIComponent(formData.email)}`)
     } catch (err) {
       setError('An error occurred. Please try again.')
       setLoading(false)
