@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import BookCard from './BookCard'
 
 interface Book {
@@ -113,9 +114,18 @@ export default function BookSearch() {
             />
           </svg>
           <h3 className="mt-4 text-lg font-medium text-gray-900">No books found</h3>
-          <p className="mt-2 text-gray-500">
+          <p className="mt-2 text-gray-500 mb-4">
             Try searching with a different title, author, or ISBN
           </p>
+          <Link
+            href="/submit-book"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-medium rounded-lg transition"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            Can't find your book? Submit it here
+          </Link>
         </div>
       )}
 
