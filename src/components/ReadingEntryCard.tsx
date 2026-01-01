@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import EditReadingEntryModal from './EditReadingEntryModal'
 
 interface ReadingEntry {
   id: string
@@ -31,7 +32,7 @@ interface ReadingEntryCardProps {
 }
 
 export default function ReadingEntryCard({ entry, onUpdate }: ReadingEntryCardProps) {
-  const [showActions, setShowActions] = useState(false)
+  const [showEditModal, setShowEditModal] = useState(false)
   const [updating, setUpdating] = useState(false)
 
   const statusColors = {
@@ -216,10 +217,10 @@ export default function ReadingEntryCard({ entry, onUpdate }: ReadingEntryCardPr
         {/* Actions */}
         <div className="mt-4 flex gap-2">
           <button
-            onClick={() => setShowActions(!showActions)}
+            onClick={() => setShowEditModal(true)}
             className="flex-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-medium py-2 px-4 rounded-lg transition text-sm"
           >
-            {showActions ? 'Close' : 'Manage'}
+            Edit
           </button>
           <button
             onClick={handleDelete}
@@ -229,20 +230,15 @@ export default function ReadingEntryCard({ entry, onUpdate }: ReadingEntryCardPr
             Remove
           </button>
         </div>
-
-        {/* Extended Actions */}
-        {showActions && (
-          <div className="mt-3 p-3 bg-gray-50 rounded-lg text-sm text-gray-600">
-            <p>Full entry management coming soon:</p>
-            <ul className="mt-2 space-y-1 list-disc list-inside">
-              <li>Update reading status</li>
-              <li>Add/edit rating and review</li>
-              <li>Track reading progress</li>
-              <li>Add personal notes</li>
-            </ul>
-          </div>
-        )}
       </div>
+
+      {/* Edit Modal */}
+      <EditReadingEntryModal
+        entry={entry}
+        isOpen={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        onUpdate={onUpdate}
+      />
     </div>
   )
 }
