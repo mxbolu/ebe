@@ -159,7 +159,7 @@ async function searchDatabase(params: SearchParams) {
     },
   })
 
-  return books.map((book) => ({
+  return books.map((book: any) => ({
     ...book,
     source: 'database' as const,
   }))
