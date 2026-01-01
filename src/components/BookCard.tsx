@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import Image from 'next/image'
 
 interface Book {
@@ -97,9 +98,11 @@ export default function BookCard({ book, onAdded }: BookCardProps) {
 
           {/* Book Details */}
           <div className="flex-1 min-w-0">
-            <h3 className="text-lg font-semibold text-gray-900 mb-1 line-clamp-2">
-              {book.title}
-            </h3>
+            <Link href={`/books/${book.id}`}>
+              <h3 className="text-lg font-semibold text-gray-900 mb-1 line-clamp-2 hover:text-indigo-600 transition cursor-pointer">
+                {book.title}
+              </h3>
+            </Link>
             <p className="text-sm text-gray-600 mb-2">
               {book.authors.join(', ')}
             </p>

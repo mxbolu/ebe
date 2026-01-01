@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import EditReadingEntryModal from './EditReadingEntryModal'
 
 interface ReadingEntry {
@@ -153,9 +154,11 @@ export default function ReadingEntryCard({ entry, onUpdate }: ReadingEntryCardPr
           )}
 
           <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-gray-900 mb-1 line-clamp-2">
-              {entry.book.title}
-            </h3>
+            <Link href={`/books/${entry.book.id}`}>
+              <h3 className="font-semibold text-gray-900 mb-1 line-clamp-2 hover:text-indigo-600 transition cursor-pointer">
+                {entry.book.title}
+              </h3>
+            </Link>
             <p className="text-sm text-gray-600 line-clamp-1">
               {entry.book.authors.join(', ')}
             </p>
