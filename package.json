@@ -1,0 +1,55 @@
+{
+  "name": "ebe",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "db:seed": "tsx prisma/seed.ts",
+    "import:books": "tsx src/scripts/bulk-import-books.ts",
+    "import:books:fast": "tsx src/scripts/bulk-import-books-optimized.ts",
+    "import:goodreads": "tsx src/scripts/goodreads-import.ts",
+    "import:test": "node src/scripts/test-import.mjs",
+    "check:deploy": "node scripts/check-deployment-ready.js",
+    "postbuild": "prisma generate"
+  },
+  "prisma": {
+    "seed": "tsx prisma/seed.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@prisma/adapter-pg": "^7.2.0",
+    "@prisma/client": "^7.2.0",
+    "@types/node": "^25.0.3",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "axios": "^1.13.2",
+    "cheerio": "^1.1.2",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "dotenv": "^17.2.3",
+    "lucide-react": "^0.562.0",
+    "next": "^16.1.1",
+    "p-limit": "^7.2.0",
+    "p-queue": "^9.0.1",
+    "pg": "^8.16.3",
+    "prisma": "^7.2.0",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
+    "tailwind-merge": "^3.4.0",
+    "tailwindcss-animate": "^1.0.7",
+    "typescript": "^5.9.3",
+    "zod": "^4.3.4"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.23",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.18",
+    "tsx": "^4.21.0"
+  }
+}

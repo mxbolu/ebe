@@ -1,0 +1,369 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============================================
+// ENUMS
+// ============================================
+
+enum UserRole {
+  USER
+  MODERATOR
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum ReadingStatus {
+  WANT_TO_READ
+  CURRENTLY_READING
+  FINISHED
+  DID_NOT_FINISH
+}
+
+enum SubmissionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum BookSource {
+  USER_SUBMITTED
+  API_IMPORT
+  ADMIN_ADDED
+  CACHED_FROM_SEARCH
+}
+
+enum BadgeType {
+  BOOK_CONTRIBUTOR
+  EDIT_CONTRIBUTOR
+  READING_MILESTONE
+  REVIEW_MASTER
+  EARLY_ADOPTER
+}
+
+// ============================================
+// USER MODELS
+// ============================================
+
+model User {
+  id                String    @id @default(cuid())
+  email             String    @unique
+  password          String
+  username          String    @unique
+  name              String?
+  avatar            String?
+  bio               String?
+  role              UserRole  @default(USER)
+  showContributions Boolean   @default(true) // opt-in/out of credit
+
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  // Relations
+  readingEntries    ReadingEntry[]
+  shelves           Shelf[]
+  bookSubmissions   BookSubmission[]
+  booksAdded        Book[]            @relation("BookAddedBy")
+  booksApproved     Book[]            @relation("BookApprovedBy")
+  reviewedSubmissions BookSubmission[] @relation("SubmissionReviewer")
+  bookEditSuggestions BookEditSuggestion[]
+  reviewedEdits     BookEditSuggestion[] @relation("EditReviewer")
+  badges            UserBadge[]
+  gamificationStats GamificationStats?
+
+  @@index([email])
+  @@index([username])
+  @@index([role])
+}
+
+// ============================================
+// BOOK MODELS
+// ============================================
+
+model ImportJob {
+  id                String    @id @default(cuid())
+
+  source            String    // "openlibrary", "googlebooks"
+  status            String    // "pending", "running", "completed", "failed", "paused"
+  totalRecords      Int       @default(0)
+  processedRecords  Int       @default(0)
+  successCount      Int       @default(0)
+  errorCount        Int       @default(0)
+
+  startedAt         DateTime?
+  completedAt       DateTime?
+  lastProcessedId   String?   // Resume point
+  errorMessage      String?   @db.Text
+
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@index([status])
+  @@index([source])
+}
+
+model Book {
+  id                  String      @id @default(cuid())
+  title               String
+  authors             String[]    // Array of author names
+  isbn                String?     @unique
+  coverImageUrl       String?
+  description         String?     @db.Text
+  publishedYear       Int?
+  genres              String[]    // Array of genres
+  pageCount           Int?
+  publisher           String?
+  language            String?     @default("en")
+
+  // Metadata
+  source              BookSource
+  addedByUserId       String?
+  approvedByUserId    String?
+  timesAddedToShelves Int         @default(0)
+  averageRating       Float?
+  totalRatings        Int         @default(0)
+
+  // External API tracking
+  openLibraryId       String?     // Open Library work ID (e.g., "OL45804W")
+  googleBooksId       String?     // Google Books volume ID
+  goodreadsId         String?     // Goodreads book ID
+  lastSyncedAt        DateTime?   // Last time we synced with external API
+
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
+
+  // Relations
+  addedBy             User?       @relation("BookAddedBy", fields: [addedByUserId], references: [id])
+  approvedBy          User?       @relation("BookApprovedBy", fields: [approvedByUserId], references: [id])
+  readingEntries      ReadingEntry[]
+  shelfBooks          ShelfBook[]
+  editSuggestions     BookEditSuggestion[]
+
+  @@index([title])
+  @@index([authors])
+  @@index([isbn])
+  @@index([source])
+  @@index([createdAt])
+  @@index([openLibraryId])
+  @@index([googleBooksId])
+  @@index([goodreadsId])
+}
+
+model BookSubmission {
+  id                String           @id @default(cuid())
+
+  // Book details
+  title             String
+  authors           String[]
+  isbn              String?
+  coverImageUrl     String?
+  description       String?          @db.Text
+  publishedYear     Int?
+  genres            String[]
+  pageCount         Int?
+  publisher         String?
+  language          String?
+  submissionNotes   String?          @db.Text
+
+  // Submission metadata
+  submittedByUserId String
+  status            SubmissionStatus @default(PENDING)
+  reviewedByUserId  String?
+  reviewNotes       String?          @db.Text
+
+  submittedAt       DateTime         @default(now())
+  reviewedAt        DateTime?
+
+  // Relations
+  submittedBy       User             @relation(fields: [submittedByUserId], references: [id])
+  reviewedBy        User?            @relation("SubmissionReviewer", fields: [reviewedByUserId], references: [id])
+
+  @@index([submittedByUserId])
+  @@index([status])
+  @@index([submittedAt])
+}
+
+model BookEditSuggestion {
+  id                String           @id @default(cuid())
+  bookId            String
+  suggestedByUserId String
+
+  // What's being edited
+  field             String           // title, authors, cover, description, etc.
+  currentValue      String?          @db.Text
+  suggestedValue    String           @db.Text
+  reason            String?          @db.Text
+
+  // Review status
+  status            SubmissionStatus @default(PENDING)
+  reviewedByUserId  String?
+  reviewNotes       String?          @db.Text
+  reviewedAt        DateTime?
+
+  createdAt         DateTime         @default(now())
+
+  // Relations
+  book              Book             @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  suggestedBy       User             @relation(fields: [suggestedByUserId], references: [id])
+  reviewedBy        User?            @relation("EditReviewer", fields: [reviewedByUserId], references: [id])
+
+  @@index([bookId])
+  @@index([status])
+  @@index([suggestedByUserId])
+}
+
+// ============================================
+// READING MODELS
+// ============================================
+
+model ReadingEntry {
+  id                String         @id @default(cuid())
+  userId            String
+  bookId            String
+
+  status            ReadingStatus  @default(WANT_TO_READ)
+  startDate         DateTime?
+  finishDate        DateTime?
+  rating            Int?           // 1-5 stars
+  review            String?        @db.Text
+  notes             String?        @db.Text
+  isFavorite        Boolean        @default(false)
+  isPrivate         Boolean        @default(false)
+
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  // Relations
+  user              User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  book              Book           @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  progress          ReadingProgress?
+
+  @@unique([userId, bookId]) // User can only have one entry per book
+  @@index([userId])
+  @@index([bookId])
+  @@index([status])
+}
+
+model ReadingProgress {
+  id                String        @id @default(cuid())
+  readingEntryId    String        @unique
+
+  currentPage       Int           @default(0)
+  totalPages        Int
+  progressPercentage Float        @default(0)
+
+  lastUpdated       DateTime      @updatedAt
+
+  // Relations
+  readingEntry      ReadingEntry  @relation(fields: [readingEntryId], references: [id], onDelete: Cascade)
+
+  @@index([readingEntryId])
+}
+
+// ============================================
+// SHELF/COLLECTION MODELS
+// ============================================
+
+model Shelf {
+  id                String      @id @default(cuid())
+  userId            String
+
+  name              String
+  description       String?     @db.Text
+  isPublic          Boolean     @default(false)
+
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  // Relations
+  user              User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  books             ShelfBook[]
+
+  @@index([userId])
+}
+
+model ShelfBook {
+  id                String      @id @default(cuid())
+  shelfId           String
+  bookId            String
+
+  addedAt           DateTime    @default(now())
+
+  // Relations
+  shelf             Shelf       @relation(fields: [shelfId], references: [id], onDelete: Cascade)
+  book              Book        @relation(fields: [bookId], references: [id], onDelete: Cascade)
+
+  @@unique([shelfId, bookId]) // Book can only be in a shelf once
+  @@index([shelfId])
+  @@index([bookId])
+}
+
+// ============================================
+// GAMIFICATION MODELS
+// ============================================
+
+model GamificationStats {
+  id                  String    @id @default(cuid())
+  userId              String    @unique
+
+  // Contribution points
+  booksSubmitted      Int       @default(0)
+  booksApproved       Int       @default(0)
+  editsSubmitted      Int       @default(0)
+  editsApproved       Int       @default(0)
+
+  // Reading points
+  booksRead           Int       @default(0)
+  pagesRead           Int       @default(0)
+  reviewsWritten      Int       @default(0)
+
+  // Total points
+  totalPoints         Int       @default(0)
+  level               Int       @default(1)
+
+  updatedAt           DateTime  @updatedAt
+
+  // Relations
+  user                User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([totalPoints])
+  @@index([level])
+}
+
+model Badge {
+  id                  String      @id @default(cuid())
+  name                String      @unique
+  description         String      @db.Text
+  type                BadgeType
+  iconUrl             String?
+  criteria            String      @db.Text // JSON string describing how to earn it
+  points              Int         @default(0)
+
+  createdAt           DateTime    @default(now())
+
+  // Relations
+  userBadges          UserBadge[]
+}
+
+model UserBadge {
+  id                  String    @id @default(cuid())
+  userId              String
+  badgeId             String
+
+  earnedAt            DateTime  @default(now())
+
+  // Relations
+  user                User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badge               Badge     @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, badgeId]) // User can only earn each badge once
+  @@index([userId])
+  @@index([badgeId])
+}

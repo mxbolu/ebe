@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx prisma migrate:*)",
+      "Bash(export NVM_DIR=\"$HOME/.nvm\")",
+      "Bash([ -s \"$NVM_DIR/nvm.sh\" ])",
+      "Bash(. \"$NVM_DIR/nvm.sh\")",
+      "Bash(npx prisma postgres start)",
+      "Bash(npx prisma dev)",
+      "Bash(cat:*)",
+      "Bash(npx prisma generate:*)",
+      "Bash(npm install:*)",
+      "Bash(npm run db:seed:*)",
+      "Bash(node prisma/seed-simple.mjs:*)",
+      "Bash(npm run import:books:*)",
+      "Bash(npm run import:test:*)",
+      "Bash(node test-db-connection.mjs:*)",
+      "Bash(npx prisma:*)",
+      "Bash(lsof:*)",
+      "Bash(node -e:*)",
+      "Bash(npm run import:goodreads:*)"
+    ]
+  }
+}
