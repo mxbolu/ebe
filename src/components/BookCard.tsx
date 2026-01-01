@@ -9,10 +9,10 @@ interface Book {
   title: string
   authors: string[]
   isbn?: string
-  coverImage?: string
+  coverImageUrl?: string
   description?: string
   pageCount?: number
-  publishedDate?: string
+  publishedYear?: number
   publisher?: string
   averageRating?: number
   source: string
@@ -71,9 +71,9 @@ export default function BookCard({ book, onAdded }: BookCardProps) {
         <div className="flex gap-4">
           {/* Cover Image */}
           <div className="flex-shrink-0">
-            {book.coverImage ? (
+            {book.coverImageUrl ? (
               <img
-                src={book.coverImage}
+                src={book.coverImageUrl}
                 alt={book.title}
                 className="w-24 h-36 object-cover rounded shadow-sm"
               />
@@ -108,8 +108,8 @@ export default function BookCard({ book, onAdded }: BookCardProps) {
             </p>
 
             <div className="flex flex-wrap gap-2 text-xs text-gray-500">
-              {book.publishedDate && (
-                <span>{new Date(book.publishedDate).getFullYear()}</span>
+              {book.publishedYear && (
+                <span>{book.publishedYear}</span>
               )}
               {book.pageCount && (
                 <span>{book.pageCount} pages</span>

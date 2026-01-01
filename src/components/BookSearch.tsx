@@ -9,10 +9,10 @@ interface Book {
   title: string
   authors: string[]
   isbn?: string
-  coverImage?: string
+  coverImageUrl?: string
   description?: string
   pageCount?: number
-  publishedDate?: string
+  publishedYear?: number
   publisher?: string
   averageRating?: number
   source: string
