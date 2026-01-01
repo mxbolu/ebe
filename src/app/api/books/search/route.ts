@@ -218,7 +218,7 @@ async function searchExternalAPIs(params: {
             coverImageUrl: book.coverUrl,
             description: book.description,
             publishedYear: book.publishedYear,
-            genres: book.categories,
+            genres: book.genres,
             pageCount: book.pageCount,
             publisher: book.publisher,
             language: book.language,

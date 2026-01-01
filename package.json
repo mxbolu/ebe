@@ -45,6 +45,7 @@
     "zod": "^4.3.4"
   },
   "devDependencies": {
+    "@types/pg": "^8.16.0",
     "tsx": "^4.21.0"
   }
 }
