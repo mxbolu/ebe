@@ -116,6 +116,21 @@ export default function BookSearch() {
     }
   }, [filters])
 
+  // Real-time search with debouncing
+  useEffect(() => {
+    if (!query.trim()) {
+      setBooks([])
+      setHasSearched(false)
+      return
+    }
+
+    const debounceTimer = setTimeout(() => {
+      performSearch(1)
+    }, 500) // Wait 500ms after user stops typing
+
+    return () => clearTimeout(debounceTimer)
+  }, [query])
+
   return (
     <div className="space-y-6">
       {/* Search Header */}
@@ -126,25 +141,30 @@ export default function BookSearch() {
         </p>
       </div>
 
-      {/* Search Form */}
-      <form onSubmit={handleSearch} className="space-y-4">
-        <div className="flex gap-3">
-          <div className="flex-1">
-            <input
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search by title, author, or ISBN..."
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
-            />
-          </div>
-          <button
-            type="submit"
-            disabled={loading || !query.trim()}
-            className="px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold rounded-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+      {/* Search Input */}
+      <div className="space-y-4">
+        <div className="relative">
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search by title, author, or ISBN..."
+            className="w-full px-4 py-3 pl-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none transition"
+            autoFocus
+          />
+          <svg
+            className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
           >
-            {loading ? 'Searching...' : 'Search'}
-          </button>
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          {loading && (
+            <div className="absolute right-4 top-1/2 transform -translate-y-1/2">
+              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-indigo-600"></div>
+            </div>
+          )}
         </div>
 
         {error && (
@@ -152,7 +172,7 @@ export default function BookSearch() {
             {error}
           </div>
         )}
-      </form>
+      </div>
 
       {/* Filters and Results */}
       {hasSearched && (

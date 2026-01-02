@@ -195,10 +195,11 @@ async function searchDatabase(params: SearchParams) {
       break
     case 'relevance':
     default:
-      // Relevance: prioritize books with ratings, then by creation date
+      // Relevance: prioritize popular books (high ratings + many ratings)
+      // This surfaces well-known, highly-rated books first
       orderBy = [
-        { averageRating: 'desc' },
-        { totalRatings: 'desc' },
+        { totalRatings: 'desc' },  // Popularity first (more ratings = more well-known)
+        { averageRating: 'desc' },  // Then quality
         { createdAt: 'desc' },
       ]
       break
