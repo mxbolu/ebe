@@ -163,6 +163,11 @@ model Book {
   @@index([openLibraryId])
   @@index([googleBooksId])
   @@index([goodreadsId])
+  @@index([publishedYear])
+  @@index([averageRating])
+  @@index([genres])
+  @@index([averageRating, totalRatings])  // Composite for sorting by popularity
+  @@index([publishedYear, averageRating]) // Composite for year + rating filters
 }
 
 model BookSubmission {

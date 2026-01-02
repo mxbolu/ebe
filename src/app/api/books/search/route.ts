@@ -15,6 +15,11 @@ interface SearchParams {
   genre?: string
   author?: string
   minRating?: number
+  maxRating?: number
+  minYear?: number
+  maxYear?: number
+  sortBy?: 'relevance' | 'rating' | 'year' | 'title'
+  sortOrder?: 'asc' | 'desc'
 }
 
 export async function GET(request: NextRequest) {
@@ -27,6 +32,11 @@ export async function GET(request: NextRequest) {
     const genre = searchParams.get('genre') || undefined
     const author = searchParams.get('author') || undefined
     const minRating = searchParams.get('minRating') ? parseFloat(searchParams.get('minRating')!) : undefined
+    const maxRating = searchParams.get('maxRating') ? parseFloat(searchParams.get('maxRating')!) : undefined
+    const minYear = searchParams.get('minYear') ? parseInt(searchParams.get('minYear')!) : undefined
+    const maxYear = searchParams.get('maxYear') ? parseInt(searchParams.get('maxYear')!) : undefined
+    const sortBy = (searchParams.get('sortBy') || 'relevance') as SearchParams['sortBy']
+    const sortOrder = (searchParams.get('sortOrder') || 'desc') as SearchParams['sortOrder']
 
     if (!query && !genre && !author) {
       return NextResponse.json(
@@ -43,6 +53,11 @@ export async function GET(request: NextRequest) {
       genre,
       author,
       minRating,
+      maxRating,
+      minYear,
+      maxYear,
+      sortBy,
+      sortOrder,
     })
 
     // If database has enough results or user only wants database results
@@ -91,7 +106,19 @@ export async function GET(request: NextRequest) {
 }
 
 async function searchDatabase(params: SearchParams) {
-  const { query, limit = 20, offset = 0, genre, author, minRating } = params
+  const {
+    query,
+    limit = 20,
+    offset = 0,
+    genre,
+    author,
+    minRating,
+    maxRating,
+    minYear,
+    maxYear,
+    sortBy = 'relevance',
+    sortOrder = 'desc'
+  } = params
 
   const whereConditions: any = {
     AND: [],
@@ -122,22 +149,66 @@ async function searchDatabase(params: SearchParams) {
     })
   }
 
-  // Rating filter
-  if (minRating) {
+  // Rating filters
+  if (minRating !== undefined) {
     whereConditions.AND.push({
       averageRating: { gte: minRating },
     })
+  }
+
+  if (maxRating !== undefined) {
+    whereConditions.AND.push({
+      averageRating: { lte: maxRating },
+    })
+  }
+
+  // Year filters
+  if (minYear !== undefined) {
+    whereConditions.AND.push({
+      publishedYear: { gte: minYear },
+    })
+  }
+
+  if (maxYear !== undefined) {
+    whereConditions.AND.push({
+      publishedYear: { lte: maxYear },
+    })
+  }
+
+  // Dynamic sorting
+  let orderBy: any[]
+  switch (sortBy) {
+    case 'rating':
+      orderBy = [
+        { averageRating: sortOrder },
+        { totalRatings: 'desc' },
+      ]
+      break
+    case 'year':
+      orderBy = [
+        { publishedYear: sortOrder },
+        { averageRating: 'desc' },
+      ]
+      break
+    case 'title':
+      orderBy = [{ title: sortOrder }]
+      break
+    case 'relevance':
+    default:
+      // Relevance: prioritize books with ratings, then by creation date
+      orderBy = [
+        { averageRating: 'desc' },
+        { totalRatings: 'desc' },
+        { createdAt: 'desc' },
+      ]
+      break
   }
 
   const books = await prisma.book.findMany({
     where: whereConditions.AND.length > 0 ? whereConditions : undefined,
     take: limit,
     skip: offset,
-    orderBy: [
-      { averageRating: 'desc' },
-      { totalRatings: 'desc' },
-      { createdAt: 'desc' },
-    ],
+    orderBy,
     select: {
       id: true,
       title: true,
