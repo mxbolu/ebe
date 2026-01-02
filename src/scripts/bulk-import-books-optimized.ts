@@ -78,17 +78,24 @@ class OptimizedBulkImporter {
     await this.createJob()
     await this.loadExistingIdentifiers()
 
-    if (this.options.source === 'openlibrary') {
-      await this.importFromOpenLibrary()
-    } else {
-      await this.importFromGoogleBooks()
+    try {
+      if (this.options.source === 'openlibrary') {
+        await this.importFromOpenLibrary()
+      } else {
+        await this.importFromGoogleBooks()
+      }
+
+      // Flush remaining buffer
+      await this.flushBuffer()
+
+      await this.completeJob()
+    } catch (error: any) {
+      console.error('\n\n❌ Import failed:', error.message)
+      await this.failJob(error.message)
+      throw error
+    } finally {
+      await prisma.$disconnect()
     }
-
-    // Flush remaining buffer
-    await this.flushBuffer()
-
-    await this.completeJob()
-    await prisma.$disconnect()
   }
 
   private async createJob() {
@@ -303,9 +310,16 @@ class OptimizedBulkImporter {
       try {
         await prisma.book.create({ data: book })
         succeeded++
-      } catch (err) {
-        // Likely a duplicate, silently skip
-        this.duplicateCount++
+      } catch (err: any) {
+        // Check if it's a duplicate or other error
+        if (err.code === 'P2002') {
+          // Unique constraint violation - duplicate
+          this.duplicateCount++
+        } else {
+          // Other error - log and count
+          this.errorCount++
+          console.error(`\n❌ Error inserting book "${book.title}":`, err.message)
+        }
       }
     }
 
@@ -356,6 +370,22 @@ class OptimizedBulkImporter {
     console.log(`✅ Successful imports: ${this.successCount}`)
     console.log(`🔄 Duplicates skipped: ${this.duplicateCount}`)
     console.log(`❌ Errors: ${this.errorCount}`)
+  }
+
+  private async failJob(errorMessage: string) {
+    if (!this.jobId) return
+
+    await prisma.importJob.update({
+      where: { id: this.jobId },
+      data: {
+        status: 'failed',
+        completedAt: new Date(),
+        processedRecords: this.processedCount,
+        successCount: this.successCount,
+        errorCount: this.errorCount,
+        errorMessage: errorMessage.substring(0, 500), // Limit error message length
+      },
+    })
   }
 }
 
