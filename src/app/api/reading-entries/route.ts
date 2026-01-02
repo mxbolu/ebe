@@ -3,6 +3,38 @@ import { z } from 'zod'
 import prisma from '@/lib/prisma'
 import { authenticateRequest } from '@/lib/auth/middleware'
 
+/**
+ * Helper function to update a book's average rating and total ratings
+ */
+async function updateBookAverageRating(bookId: string) {
+  // Get all finished, public reading entries with ratings for this book
+  const entriesWithRatings = await prisma.readingEntry.findMany({
+    where: {
+      bookId,
+      status: 'FINISHED',
+      isPrivate: false,
+      rating: { not: null },
+    },
+    select: {
+      rating: true,
+    },
+  })
+
+  const totalRatings = entriesWithRatings.length
+  const averageRating = totalRatings > 0
+    ? entriesWithRatings.reduce((sum, entry) => sum + (entry.rating || 0), 0) / totalRatings
+    : null
+
+  // Update the book's average rating and total ratings
+  await prisma.book.update({
+    where: { id: bookId },
+    data: {
+      averageRating,
+      totalRatings,
+    },
+  })
+}
+
 const createEntrySchema = z.object({
   bookId: z.string().min(1, 'Book ID is required'),
   status: z.enum(['WANT_TO_READ', 'CURRENTLY_READING', 'FINISHED', 'DID_NOT_FINISH']),
@@ -165,6 +197,14 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Validate that rating/review are only allowed for finished books
+    if (data.status !== 'FINISHED' && (data.rating || data.review)) {
+      return NextResponse.json(
+        { error: 'Rating and review can only be added to finished books' },
+        { status: 400 }
+      )
+    }
+
     // Create reading entry
     const entry = await prisma.readingEntry.create({
       data: {
@@ -192,6 +232,11 @@ export async function POST(request: NextRequest) {
         },
       },
     })
+
+    // Recalculate book's average rating if a rating was added
+    if (data.rating !== undefined && data.status === 'FINISHED') {
+      await updateBookAverageRating(data.bookId)
+    }
 
     return NextResponse.json({ entry }, { status: 201 })
   } catch (error) {

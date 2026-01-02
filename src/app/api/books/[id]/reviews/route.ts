@@ -12,10 +12,12 @@ export async function GET(
     const limit = parseInt(searchParams.get('limit') || '5')
     const offset = (page - 1) * limit
 
-    // Fetch reading entries with reviews for this book
+    // Fetch reading entries with reviews for this book (only from finished books)
     const reviews = await prisma.readingEntry.findMany({
       where: {
         bookId: id,
+        status: 'FINISHED', // Only show reviews from finished books
+        isPrivate: false, // Only show public reviews
         OR: [
           { review: { not: null } },
           { rating: { not: null } },

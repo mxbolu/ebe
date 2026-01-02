@@ -3,6 +3,38 @@ import { z } from 'zod'
 import prisma from '@/lib/prisma'
 import { authenticateRequest } from '@/lib/auth/middleware'
 
+/**
+ * Helper function to update a book's average rating and total ratings
+ */
+async function updateBookAverageRating(bookId: string) {
+  // Get all finished, public reading entries with ratings for this book
+  const entriesWithRatings = await prisma.readingEntry.findMany({
+    where: {
+      bookId,
+      status: 'FINISHED',
+      isPrivate: false,
+      rating: { not: null },
+    },
+    select: {
+      rating: true,
+    },
+  })
+
+  const totalRatings = entriesWithRatings.length
+  const averageRating = totalRatings > 0
+    ? entriesWithRatings.reduce((sum, entry) => sum + (entry.rating || 0), 0) / totalRatings
+    : null
+
+  // Update the book's average rating and total ratings
+  await prisma.book.update({
+    where: { id: bookId },
+    data: {
+      averageRating,
+      totalRatings,
+    },
+  })
+}
+
 const updateEntrySchema = z.object({
   status: z.enum(['WANT_TO_READ', 'CURRENTLY_READING', 'FINISHED', 'DID_NOT_FINISH']).optional(),
   rating: z.number().min(1).max(5).nullable().optional(),
@@ -113,8 +145,18 @@ export async function PATCH(
     const updateData: any = {}
 
     if (data.status !== undefined) updateData.status = data.status
-    if (data.rating !== undefined) updateData.rating = data.rating
-    if (data.review !== undefined) updateData.review = data.review
+
+    // Only allow rating and review for FINISHED books
+    if (data.status !== undefined && data.status !== 'FINISHED') {
+      // Clear rating and review if status is changed from FINISHED to something else
+      updateData.rating = null
+      updateData.review = null
+    } else {
+      // Only update rating and review if status is FINISHED or staying FINISHED
+      if (data.rating !== undefined) updateData.rating = data.rating
+      if (data.review !== undefined) updateData.review = data.review
+    }
+
     if (data.notes !== undefined) updateData.notes = data.notes
     if (data.isFavorite !== undefined) updateData.isFavorite = data.isFavorite
     if (data.isPrivate !== undefined) updateData.isPrivate = data.isPrivate
@@ -142,6 +184,11 @@ export async function PATCH(
         },
       },
     })
+
+    // Recalculate book's average rating if rating was changed
+    if (data.rating !== undefined || (data.status !== undefined && data.status !== 'FINISHED')) {
+      await updateBookAverageRating(existingEntry.bookId)
+    }
 
     return NextResponse.json({ entry }, { status: 200 })
   } catch (error) {
@@ -187,10 +234,15 @@ export async function DELETE(
       )
     }
 
+    const bookId = existingEntry.bookId
+
     // Delete reading entry (progress will be deleted via cascade)
     await prisma.readingEntry.delete({
       where: { id },
     })
+
+    // Recalculate book's average rating
+    await updateBookAverageRating(bookId)
 
     return NextResponse.json(
       { message: 'Reading entry deleted successfully' },
