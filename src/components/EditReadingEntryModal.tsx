@@ -73,20 +73,24 @@ export default function EditReadingEntryModal({
     setSaving(true)
 
     try {
+      const payload = {
+        status: formData.status,
+        rating: formData.rating,
+        review: formData.review.trim() || null,
+        notes: formData.notes.trim() || null,
+        isFavorite: formData.isFavorite,
+        isPrivate: formData.isPrivate,
+        startDate: formData.startDate || null,
+        finishDate: formData.finishDate || null,
+        currentPage: formData.currentPage || null,
+      }
+
+      console.log('[EditReadingEntryModal] Submitting payload:', payload)
+
       const response = await fetch(`/api/reading-entries/${entry.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          status: formData.status,
-          rating: formData.rating,
-          review: formData.review || null,
-          notes: formData.notes || null,
-          isFavorite: formData.isFavorite,
-          isPrivate: formData.isPrivate,
-          startDate: formData.startDate || null,
-          finishDate: formData.finishDate || null,
-          currentPage: formData.currentPage || null,
-        }),
+        body: JSON.stringify(payload),
       })
 
       if (!response.ok) {

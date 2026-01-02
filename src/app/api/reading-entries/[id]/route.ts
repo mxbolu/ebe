@@ -177,18 +177,30 @@ export async function PATCH(
     const data = validationResult.data
     const updateData: any = {}
 
+    console.log('[UPDATE ENTRY] Request data:', JSON.stringify(data, null, 2))
+    console.log('[UPDATE ENTRY] Existing entry status:', existingEntry.status)
+
     if (data.status !== undefined) updateData.status = data.status
 
     // Determine final status (new status or existing status)
     const finalStatus = data.status !== undefined ? data.status : existingEntry.status
 
+    console.log('[UPDATE ENTRY] Final status:', finalStatus)
+
     // Only allow rating and review for FINISHED books
     if (finalStatus === 'FINISHED') {
       // Allow updating rating and review for finished books
+      console.log('[UPDATE ENTRY] Book is FINISHED, processing rating and review...')
+      console.log('[UPDATE ENTRY] data.rating:', data.rating)
+      console.log('[UPDATE ENTRY] data.review:', data.review)
+
       if (data.rating !== undefined) updateData.rating = data.rating
       if (data.review !== undefined) updateData.review = data.review
+
+      console.log('[UPDATE ENTRY] updateData after FINISHED processing:', JSON.stringify(updateData, null, 2))
     } else {
       // Clear rating and review if book is not finished
+      console.log('[UPDATE ENTRY] Book is NOT FINISHED, clearing rating and review')
       updateData.rating = null
       updateData.review = null
     }
@@ -202,6 +214,8 @@ export async function PATCH(
     if (data.finishDate !== undefined) {
       updateData.finishDate = data.finishDate ? new Date(data.finishDate) : null
     }
+
+    console.log('[UPDATE ENTRY] Final updateData before database update:', JSON.stringify(updateData, null, 2))
 
     // Update reading entry
     const entry = await prisma.readingEntry.update({
