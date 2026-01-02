@@ -1,0 +1,60 @@
+import { NextRequest, NextResponse } from 'next/server'
+import prisma from '@/lib/prisma'
+
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params
+    const searchParams = request.nextUrl.searchParams
+    const page = parseInt(searchParams.get('page') || '1')
+    const limit = parseInt(searchParams.get('limit') || '5')
+    const offset = (page - 1) * limit
+
+    // Fetch reading entries with reviews for this book
+    const reviews = await prisma.readingEntry.findMany({
+      where: {
+        bookId: id,
+        OR: [
+          { review: { not: null } },
+          { rating: { not: null } },
+        ],
+      },
+      select: {
+        id: true,
+        rating: true,
+        review: true,
+        createdAt: true,
+        user: {
+          select: {
+            id: true,
+            username: true,
+            name: true,
+            avatar: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+      take: limit + 1,
+      skip: offset,
+    })
+
+    const hasMore = reviews.length > limit
+    const paginatedReviews = reviews.slice(0, limit)
+
+    return NextResponse.json({
+      reviews: paginatedReviews,
+      hasMore,
+      page,
+    })
+  } catch (error) {
+    console.error('Get reviews error:', error)
+    return NextResponse.json(
+      { error: 'Failed to fetch reviews' },
+      { status: 500 }
+    )
+  }
+}

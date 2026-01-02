@@ -4,21 +4,26 @@ import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import Link from 'next/link'
 import RatingInput from '@/components/RatingInput'
+import BookReviews from '@/components/BookReviews'
+import RelatedBooks from '@/components/RelatedBooks'
+import { BookDetailSkeleton } from '@/components/LoadingSkeleton'
+import ErrorBoundary from '@/components/ErrorBoundary'
+import { useToast } from '@/components/ToastContainer'
 
 interface Book {
   id: string
   title: string
   authors: string[]
   isbn?: string
-  coverImage?: string
+  coverImageUrl?: string
   description?: string
   pageCount?: number
-  publishedDate?: string
+  publishedYear?: number
   publisher?: string
   genres?: string[]
   language?: string
   averageRating?: number
-  ratingsCount?: number
+  totalRatings?: number
 }
 
 interface ReadingEntry {
@@ -34,6 +39,7 @@ export default function BookDetailPage() {
   const router = useRouter()
   const params = useParams()
   const bookId = params.id as string
+  const toast = useToast()
 
   const [book, setBook] = useState<Book | null>(null)
   const [readingEntry, setReadingEntry] = useState<ReadingEntry | null>(null)
@@ -81,8 +87,9 @@ export default function BookDetailPage() {
 
       await fetchBookDetails()
       setShowAddMenu(false)
+      toast.success('Book added to your library!')
     } catch (err: any) {
-      alert(err.message)
+      toast.error(err.message)
     } finally {
       setAdding(false)
     }
@@ -101,20 +108,14 @@ export default function BookDetailPage() {
       }
 
       await fetchBookDetails()
+      toast.success('Book removed from your library')
     } catch (err: any) {
-      alert(err.message)
+      toast.error(err.message)
     }
   }
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mb-4"></div>
-          <p className="text-gray-600">Loading book details...</p>
-        </div>
-      </div>
-    )
+    return <BookDetailSkeleton />
   }
 
   if (error || !book) {
@@ -135,32 +136,33 @@ export default function BookDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center h-16">
-            <Link href="/dashboard" className="text-indigo-600 hover:text-indigo-700 font-medium">
-              ← Back to Dashboard
-            </Link>
+    <ErrorBoundary>
+      <div className="min-h-screen bg-gray-50">
+        {/* Header */}
+        <header className="bg-white border-b border-gray-200">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center h-16">
+              <Link href="/dashboard" className="text-indigo-600 hover:text-indigo-700 font-medium">
+                ← Back to Dashboard
+              </Link>
+            </div>
           </div>
-        </div>
-      </header>
+        </header>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Column - Book Cover & Actions */}
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg border border-gray-200 p-6 sticky top-8">
-              {/* Cover Image */}
-              {book.coverImage ? (
-                <img
-                  src={book.coverImage}
-                  alt={book.title}
-                  className="w-full rounded-lg shadow-lg mb-6"
-                />
-              ) : (
+        {/* Main Content */}
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Left Column - Book Cover & Actions */}
+            <div className="lg:col-span-1">
+              <div className="bg-white rounded-lg border border-gray-200 p-6 sticky top-8">
+                {/* Cover Image */}
+                {book.coverImageUrl ? (
+                  <img
+                    src={book.coverImageUrl}
+                    alt={book.title}
+                    className="w-full rounded-lg shadow-lg mb-6"
+                  />
+                ) : (
                 <div className="w-full aspect-[2/3] bg-gray-200 rounded-lg flex items-center justify-center mb-6">
                   <svg
                     className="w-24 h-24 text-gray-400"
@@ -249,11 +251,11 @@ export default function BookDetailPage() {
                     <span className="font-medium text-gray-900">{book.pageCount}</span>
                   </div>
                 )}
-                {book.publishedDate && (
+                {book.publishedYear && (
                   <div className="flex justify-between">
                     <span className="text-gray-600">Published</span>
                     <span className="font-medium text-gray-900">
-                      {new Date(book.publishedDate).getFullYear()}
+                      {book.publishedYear}
                     </span>
                   </div>
                 )}
@@ -305,7 +307,7 @@ export default function BookDetailPage() {
                     ))}
                   </div>
                   <span className="text-sm text-gray-600">
-                    {book.averageRating.toFixed(1)} {book.ratingsCount && `(${book.ratingsCount} ratings)`}
+                    {book.averageRating.toFixed(1)} {book.totalRatings && `(${book.totalRatings} ratings)`}
                   </span>
                 </div>
               )}
@@ -390,9 +392,20 @@ export default function BookDetailPage() {
                 )}
               </div>
             )}
+
+            {/* Reviews Section */}
+            <BookReviews bookId={bookId} />
+
+            {/* Related Books Section */}
+            <RelatedBooks
+              bookId={bookId}
+              genres={book.genres}
+              authors={book.authors}
+            />
           </div>
         </div>
       </main>
     </div>
+    </ErrorBoundary>
   )
 }
