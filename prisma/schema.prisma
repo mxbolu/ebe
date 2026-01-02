@@ -292,6 +292,10 @@ model ReadingEntry {
   @@index([userId])
   @@index([bookId])
   @@index([status])
+  @@index([userId, status]) // Composite for badge checking (count finished books)
+  @@index([bookId, status, isPrivate]) // Composite for fetching book reviews
+  @@index([createdAt]) // For sorting reviews by recent
+  @@index([rating]) // For sorting reviews by rating
 }
 
 model ReadingProgress {
@@ -393,6 +397,9 @@ model Badge {
 
   // Relations
   userBadges          UserBadge[]
+
+  @@index([type]) // For filtering badges by type
+  @@index([type, name]) // Composite for badge lookup in checkBadges functions
 }
 
 model UserBadge {
@@ -427,6 +434,9 @@ model ReadingChallenge {
 
   // Relations
   userChallenges      UserChallenge[]
+
+  @@index([isActive, endDate]) // Composite for fetching active, non-expired challenges
+  @@index([startDate]) // For sorting challenges
 }
 
 model UserChallenge {
