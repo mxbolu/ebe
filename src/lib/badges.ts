@@ -318,8 +318,9 @@ export async function checkAllBadges(userId: string): Promise<BadgeCheckResult[]
  * Update reading streak for a user
  */
 export async function updateReadingStreak(userId: string): Promise<void> {
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
+  // Use UTC to avoid timezone issues
+  const now = new Date()
+  const today = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()))
 
   let streak = await prisma.readingStreak.findUnique({
     where: { userId },
@@ -338,8 +339,13 @@ export async function updateReadingStreak(userId: string): Promise<void> {
   } else {
     const lastRead = streak.lastReadDate ? new Date(streak.lastReadDate) : null
     if (lastRead) {
-      lastRead.setHours(0, 0, 0, 0)
-      const daysDiff = Math.floor((today.getTime() - lastRead.getTime()) / (1000 * 60 * 60 * 24))
+      // Normalize to UTC midnight for consistent day comparison
+      const lastReadUTC = new Date(Date.UTC(
+        lastRead.getUTCFullYear(),
+        lastRead.getUTCMonth(),
+        lastRead.getUTCDate()
+      ))
+      const daysDiff = Math.floor((today.getTime() - lastReadUTC.getTime()) / (1000 * 60 * 60 * 24))
 
       if (daysDiff === 0) {
         // Same day, no update needed
