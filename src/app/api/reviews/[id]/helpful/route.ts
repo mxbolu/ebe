@@ -74,6 +74,7 @@ export async function POST(
       where: { readingEntryId },
     })
 
+    console.log(`[Review] User ${user.userId} marked review ${readingEntryId} as helpful (total: ${helpfulCount})`)
     return NextResponse.json({ helpfulCount }, { status: 201 })
   } catch (error) {
     console.error('Mark review helpful error:', error)
@@ -129,6 +130,7 @@ export async function DELETE(
       where: { readingEntryId },
     })
 
+    console.log(`[Review] User ${user.userId} removed helpful mark from review ${readingEntryId} (total: ${helpfulCount})`)
     return NextResponse.json({ helpfulCount }, { status: 200 })
   } catch (error) {
     console.error('Remove helpful mark error:', error)

@@ -96,6 +96,7 @@ export async function POST(request: NextRequest) {
       },
     })
 
+    console.log(`[Challenge] User ${user.userId} joined challenge "${challenge.name}" (${challengeId})`)
     return NextResponse.json({ userChallenge }, { status: 201 })
   } catch (error) {
     console.error('Join challenge error:', error)

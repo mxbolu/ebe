@@ -54,6 +54,7 @@ export async function checkReadingMilestones(userId: string): Promise<BadgeCheck
         } catch (error: any) {
           // If unique constraint fails (race condition), refetch the badge
           if (error.code === 'P2002') {
+            console.log(`[Badge] Race condition detected for "${milestone.badgeName}", refetching...`)
             badge = await prisma.badge.findFirst({
               where: {
                 name: milestone.badgeName,
@@ -61,13 +62,17 @@ export async function checkReadingMilestones(userId: string): Promise<BadgeCheck
               },
             })
           } else {
+            console.error(`[Badge] Failed to create reading milestone badge "${milestone.badgeName}":`, error)
             throw error
           }
         }
       }
 
       // Skip if badge creation/fetch failed
-      if (!badge) continue
+      if (!badge) {
+        console.error(`[Badge] Failed to create or fetch reading milestone badge "${milestone.badgeName}" for user ${userId}`)
+        continue
+      }
 
       // Check if user already has this badge
       const existing = await prisma.userBadge.findUnique({
@@ -87,6 +92,7 @@ export async function checkReadingMilestones(userId: string): Promise<BadgeCheck
           },
         })
 
+        console.log(`[Badge] User ${userId} earned "${badge.name}" (Reading Milestone)`)
         results.push({
           earned: true,
           badgeId: badge.id,
@@ -143,6 +149,7 @@ export async function checkReviewMaster(userId: string): Promise<BadgeCheckResul
           })
         } catch (error: any) {
           if (error.code === 'P2002') {
+            console.log(`[Badge] Race condition detected for "${milestone.badgeName}", refetching...`)
             badge = await prisma.badge.findFirst({
               where: {
                 name: milestone.badgeName,
@@ -150,12 +157,16 @@ export async function checkReviewMaster(userId: string): Promise<BadgeCheckResul
               },
             })
           } else {
+            console.error(`[Badge] Failed to create review master badge "${milestone.badgeName}":`, error)
             throw error
           }
         }
       }
 
-      if (!badge) continue
+      if (!badge) {
+        console.error(`[Badge] Failed to create or fetch review master badge "${milestone.badgeName}" for user ${userId}`)
+        continue
+      }
 
       const existing = await prisma.userBadge.findUnique({
         where: {
@@ -174,6 +185,7 @@ export async function checkReviewMaster(userId: string): Promise<BadgeCheckResul
           },
         })
 
+        console.log(`[Badge] User ${userId} earned "${badge.name}" (Review Master)`)
         results.push({
           earned: true,
           badgeId: badge.id,
@@ -240,6 +252,7 @@ export async function checkGenreExplorer(userId: string): Promise<BadgeCheckResu
           })
         } catch (error: any) {
           if (error.code === 'P2002') {
+            console.log(`[Badge] Race condition detected for "${badgeName}", refetching...`)
             badge = await prisma.badge.findFirst({
               where: {
                 name: badgeName,
@@ -247,12 +260,16 @@ export async function checkGenreExplorer(userId: string): Promise<BadgeCheckResu
               },
             })
           } else {
+            console.error(`[Badge] Failed to create genre explorer badge "${badgeName}":`, error)
             throw error
           }
         }
       }
 
-      if (!badge) continue
+      if (!badge) {
+        console.error(`[Badge] Failed to create or fetch genre explorer badge "${badgeName}" for user ${userId}`)
+        continue
+      }
 
       const existing = await prisma.userBadge.findUnique({
         where: {
@@ -271,6 +288,7 @@ export async function checkGenreExplorer(userId: string): Promise<BadgeCheckResu
           },
         })
 
+        console.log(`[Badge] User ${userId} earned "${badge.name}" (Genre Explorer)`)
         results.push({
           earned: true,
           badgeId: badge.id,
@@ -308,6 +326,7 @@ export async function updateReadingStreak(userId: string): Promise<void> {
   })
 
   if (!streak) {
+    console.log(`[Streak] Creating new streak for user ${userId}`)
     streak = await prisma.readingStreak.create({
       data: {
         userId,
@@ -328,6 +347,7 @@ export async function updateReadingStreak(userId: string): Promise<void> {
       } else if (daysDiff === 1) {
         // Consecutive day, increment streak
         const newStreak = streak.currentStreak + 1
+        console.log(`[Streak] User ${userId} streak increased: ${streak.currentStreak} → ${newStreak} days`)
         await prisma.readingStreak.update({
           where: { userId },
           data: {
@@ -338,6 +358,7 @@ export async function updateReadingStreak(userId: string): Promise<void> {
         })
       } else {
         // Streak broken, reset to 1
+        console.log(`[Streak] User ${userId} streak broken after ${streak.currentStreak} days (${daysDiff} day gap)`)
         await prisma.readingStreak.update({
           where: { userId },
           data: {
@@ -394,6 +415,7 @@ export async function updateReadingStreak(userId: string): Promise<void> {
             })
           } catch (error: any) {
             if (error.code === 'P2002') {
+              console.log(`[Badge] Race condition detected for "${milestone.badgeName}", refetching...`)
               badge = await prisma.badge.findFirst({
                 where: {
                   name: milestone.badgeName,
@@ -401,12 +423,16 @@ export async function updateReadingStreak(userId: string): Promise<void> {
                 },
               })
             } else {
+              console.error(`[Badge] Failed to create streak badge "${milestone.badgeName}":`, error)
               throw error
             }
           }
         }
 
-        if (!badge) continue
+        if (!badge) {
+          console.error(`[Badge] Failed to create or fetch streak badge "${milestone.badgeName}" for user ${userId}`)
+          continue
+        }
 
         const existing = await prisma.userBadge.findUnique({
           where: {
@@ -424,6 +450,7 @@ export async function updateReadingStreak(userId: string): Promise<void> {
               badgeId: badge.id,
             },
           })
+          console.log(`[Badge] User ${userId} earned "${badge.name}" (Reading Streak)`)
         }
       }
     }
