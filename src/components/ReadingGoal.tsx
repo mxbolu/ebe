@@ -104,8 +104,13 @@ export default function ReadingGoal({ userId }: ReadingGoalProps) {
         </div>
         {goal && !editing && (
           <button
-            onClick={() => setEditing(true)}
-            className="text-sm text-indigo-600 hover:text-indigo-700 font-medium"
+            type="button"
+            onClick={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              setEditing(true)
+            }}
+            className="text-sm text-indigo-600 hover:text-indigo-700 font-medium cursor-pointer"
           >
             Edit
           </button>
