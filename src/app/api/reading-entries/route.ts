@@ -38,7 +38,7 @@ async function updateBookAverageRating(bookId: string) {
 const createEntrySchema = z.object({
   bookId: z.string().min(1, 'Book ID is required'),
   status: z.enum(['WANT_TO_READ', 'CURRENTLY_READING', 'FINISHED', 'DID_NOT_FINISH']),
-  rating: z.number().min(1).max(5).optional(),
+  rating: z.number().min(1.0).max(10.0).optional(),
   review: z.string().optional(),
   notes: z.string().optional(),
   startDate: z.string().datetime().optional(),

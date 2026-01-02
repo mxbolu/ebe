@@ -263,7 +263,7 @@ model ReadingEntry {
   status            ReadingStatus  @default(WANT_TO_READ)
   startDate         DateTime?
   finishDate        DateTime?
-  rating            Int?           // 1-5 stars
+  rating            Float?         // 1.0-10.0 scale
   review            String?        @db.Text
   notes             String?        @db.Text
   isFavorite        Boolean        @default(false)
