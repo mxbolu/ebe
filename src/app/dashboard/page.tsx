@@ -66,11 +66,15 @@ export default function DashboardPage() {
 
             <div className="flex items-center space-x-4">
               {!user.isEmailVerified && (
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg px-3 py-2">
-                  <p className="text-sm text-yellow-800">
-                    Please verify your email
+                <button
+                  type="button"
+                  onClick={() => router.push(`/verify-email?email=${encodeURIComponent(user.email)}`)}
+                  className="bg-yellow-50 border border-yellow-200 rounded-lg px-3 py-2 hover:bg-yellow-100 transition cursor-pointer"
+                >
+                  <p className="text-sm text-yellow-800 font-medium">
+                    Please verify your email - Click here
                   </p>
-                </div>
+                </button>
               )}
 
               <div className="flex items-center space-x-3">
