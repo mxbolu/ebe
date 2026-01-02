@@ -104,7 +104,18 @@ export default function BookCard({ book, onAdded }: BookCardProps) {
               </h3>
             </Link>
             <p className="text-sm text-gray-600 mb-2">
-              {book.authors.join(', ')}
+              {book.authors.map((author, index) => (
+                <span key={author}>
+                  <Link
+                    href={`/authors/${encodeURIComponent(author)}`}
+                    className="hover:text-indigo-600 hover:underline transition"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {author}
+                  </Link>
+                  {index < book.authors.length - 1 && ', '}
+                </span>
+              ))}
             </p>
 
             <div className="flex flex-wrap gap-2 text-xs text-gray-500">

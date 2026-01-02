@@ -286,7 +286,19 @@ export default function BookDetailPage() {
             {/* Title & Author */}
             <div className="bg-white rounded-lg border border-gray-200 p-6">
               <h1 className="text-3xl font-bold text-gray-900 mb-3">{book.title}</h1>
-              <p className="text-lg text-gray-700 mb-4">by {book.authors.join(', ')}</p>
+              <p className="text-lg text-gray-700 mb-4">
+                by {book.authors.map((author, index) => (
+                  <span key={author}>
+                    <Link
+                      href={`/authors/${encodeURIComponent(author)}`}
+                      className="text-indigo-600 hover:text-indigo-800 hover:underline transition"
+                    >
+                      {author}
+                    </Link>
+                    {index < book.authors.length - 1 && ', '}
+                  </span>
+                ))}
+              </p>
 
               {/* Rating */}
               {book.averageRating && (
