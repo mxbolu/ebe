@@ -276,6 +276,10 @@ model ReadingEntry {
   isFavorite        Boolean        @default(false)
   isPrivate         Boolean        @default(false)
 
+  // Re-read tracking
+  readCount         Int            @default(1)  // Number of times read
+  lastReadDate      DateTime?                   // Most recent finish date
+
   createdAt         DateTime       @default(now())
   updatedAt         DateTime       @updatedAt
 

@@ -17,6 +17,8 @@ interface ReadingEntry {
   startDate: string | null
   finishDate: string | null
   currentPage: number | null
+  readCount?: number
+  lastReadDate?: string | null
   book: {
     id: string
     title: string

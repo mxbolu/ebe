@@ -15,6 +15,8 @@ interface ReadingEntry {
   startDate: string | null
   finishDate: string | null
   currentPage: number | null
+  readCount?: number
+  lastReadDate?: string | null
   book: {
     id: string
     title: string
@@ -133,6 +135,32 @@ export default function ReadingEntryCard({ entry, onUpdate }: ReadingEntryCardPr
 
   const handleFinishReading = async () => {
     await handleStatusChange('FINISHED')
+  }
+
+  const handleReadAgain = async () => {
+    setUpdating(true)
+    try {
+      const response = await fetch(`/api/reading-entries/${entry.id}/reread`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          finishDate: new Date().toISOString(),
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to mark as read again')
+      }
+
+      const data = await response.json()
+      alert(data.message || 'Book marked as read again!')
+      onUpdate()
+    } catch (error) {
+      console.error('Read again failed:', error)
+      alert('Failed to mark as read again. Please try again.')
+    } finally {
+      setUpdating(false)
+    }
   }
 
   const progress = entry.currentPage && entry.book.pageCount
@@ -257,6 +285,14 @@ export default function ReadingEntryCard({ entry, onUpdate }: ReadingEntryCardPr
           {entry.finishDate && (
             <div>Finished: {new Date(entry.finishDate).toLocaleDateString()}</div>
           )}
+          {entry.readCount && entry.readCount > 1 && (
+            <div className="flex items-center gap-1 text-indigo-600 font-medium">
+              <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                <path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" />
+              </svg>
+              Read {entry.readCount} times
+            </div>
+          )}
         </div>
 
         {/* Quick Actions */}
@@ -280,6 +316,21 @@ export default function ReadingEntryCard({ entry, onUpdate }: ReadingEntryCardPr
               className="w-full bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-4 rounded-lg transition text-sm disabled:opacity-50"
             >
               Mark as Finished
+            </button>
+          </div>
+        )}
+
+        {entry.status === 'FINISHED' && (
+          <div className="mt-4">
+            <button
+              onClick={handleReadAgain}
+              disabled={updating}
+              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg transition text-sm disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              Read It Again
             </button>
           </div>
         )}
