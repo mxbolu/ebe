@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import prisma from '@/lib/prisma'
-import { verifyAuth } from '@/lib/auth/jwt'
+import { authenticateRequest } from '@/lib/auth/middleware'
 
 const submitBookSchema = z.object({
   title: z.string().min(1, 'Title is required'),
@@ -19,7 +19,7 @@ const submitBookSchema = z.object({
 export async function POST(request: NextRequest) {
   try {
     // Verify authentication
-    const authResult = await verifyAuth(request)
+    const authResult = await authenticateRequest(request)
     if (!authResult.valid || !authResult.payload) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
