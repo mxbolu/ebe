@@ -29,76 +29,84 @@ export async function checkReadingMilestones(userId: string): Promise<BadgeCheck
     { count: 100, name: 'Centennial Reader', badgeName: 'Literary Legend' },
   ]
 
-  for (const milestone of milestones) {
-    if (finishedCount >= milestone.count) {
-      // Check if badge exists or create it (with race condition handling)
-      let badge = await prisma.badge.findFirst({
-        where: {
-          name: milestone.badgeName,
-          type: 'READING_MILESTONE',
-        },
-      })
+  // Batch fetch all reading milestone badges to reduce queries
+  const eligibleMilestones = milestones.filter((m) => finishedCount >= m.count)
+  if (eligibleMilestones.length === 0) return results
 
-      // Create badge if it doesn't exist
-      if (!badge) {
-        try {
-          badge = await prisma.badge.create({
-            data: {
+  const badgeNames = eligibleMilestones.map((m) => m.badgeName)
+  const existingBadges = await prisma.badge.findMany({
+    where: {
+      name: { in: badgeNames },
+      type: 'READING_MILESTONE',
+    },
+  })
+
+  // Batch fetch user's existing milestone badges
+  const userBadges = await prisma.userBadge.findMany({
+    where: {
+      userId,
+      badgeId: { in: existingBadges.map((b) => b.id) },
+    },
+  })
+  const userBadgeIds = new Set(userBadges.map((ub) => ub.badgeId))
+
+  for (const milestone of eligibleMilestones) {
+    // Find or create badge
+    let badge = existingBadges.find((b) => b.name === milestone.badgeName)
+
+    // Create badge if it doesn't exist
+    if (!badge) {
+      try {
+        badge = await prisma.badge.create({
+          data: {
+            name: milestone.badgeName,
+            description: `Read ${milestone.count} books`,
+            type: 'READING_MILESTONE',
+            criteria: JSON.stringify({ booksFinished: milestone.count }),
+            points: milestone.count * 10,
+          },
+        })
+        // Add to cache for subsequent checks
+        existingBadges.push(badge)
+      } catch (error: any) {
+        // If unique constraint fails (race condition), refetch the badge
+        if (error.code === 'P2002') {
+          console.log(`[Badge] Race condition detected for "${milestone.badgeName}", refetching...`)
+          badge = await prisma.badge.findFirst({
+            where: {
               name: milestone.badgeName,
-              description: `Read ${milestone.count} books`,
               type: 'READING_MILESTONE',
-              criteria: JSON.stringify({ booksFinished: milestone.count }),
-              points: milestone.count * 10,
             },
           })
-        } catch (error: any) {
-          // If unique constraint fails (race condition), refetch the badge
-          if (error.code === 'P2002') {
-            console.log(`[Badge] Race condition detected for "${milestone.badgeName}", refetching...`)
-            badge = await prisma.badge.findFirst({
-              where: {
-                name: milestone.badgeName,
-                type: 'READING_MILESTONE',
-              },
-            })
-          } else {
-            console.error(`[Badge] Failed to create reading milestone badge "${milestone.badgeName}":`, error)
-            throw error
-          }
+          if (badge) existingBadges.push(badge)
+        } else {
+          console.error(`[Badge] Failed to create reading milestone badge "${milestone.badgeName}":`, error)
+          throw error
         }
       }
+    }
 
-      // Skip if badge creation/fetch failed
-      if (!badge) {
-        console.error(`[Badge] Failed to create or fetch reading milestone badge "${milestone.badgeName}" for user ${userId}`)
-        continue
-      }
+    // Skip if badge creation/fetch failed
+    if (!badge) {
+      console.error(`[Badge] Failed to create or fetch reading milestone badge "${milestone.badgeName}" for user ${userId}`)
+      continue
+    }
 
-      // Check if user already has this badge
-      const existing = await prisma.userBadge.findUnique({
-        where: {
-          userId_badgeId: {
-            userId,
-            badgeId: badge.id,
-          },
+    // Check if user already has this badge (using cached Set)
+    if (!userBadgeIds.has(badge.id)) {
+      await prisma.userBadge.create({
+        data: {
+          userId,
+          badgeId: badge.id,
         },
       })
 
-      if (!existing) {
-        await prisma.userBadge.create({
-          data: {
-            userId,
-            badgeId: badge.id,
-          },
-        })
-
-        console.log(`[Badge] User ${userId} earned "${badge.name}" (Reading Milestone)`)
-        results.push({
-          earned: true,
-          badgeId: badge.id,
-          badgeName: badge.name,
-        })
-      }
+      console.log(`[Badge] User ${userId} earned "${badge.name}" (Reading Milestone)`)
+      results.push({
+        earned: true,
+        badgeId: badge.id,
+        badgeName: badge.name,
+      })
     }
   }
 
@@ -127,71 +135,79 @@ export async function checkReviewMaster(userId: string): Promise<BadgeCheckResul
     { count: 100, badgeName: 'Review Legend' },
   ]
 
-  for (const milestone of milestones) {
-    if (reviewCount >= milestone.count) {
-      let badge = await prisma.badge.findFirst({
-        where: {
-          name: milestone.badgeName,
-          type: 'REVIEW_MASTER',
-        },
-      })
+  // Batch fetch eligible badges
+  const eligibleMilestones = milestones.filter((m) => reviewCount >= m.count)
+  if (eligibleMilestones.length === 0) return results
 
-      if (!badge) {
-        try {
-          badge = await prisma.badge.create({
-            data: {
+  const badgeNames = eligibleMilestones.map((m) => m.badgeName)
+  const existingBadges = await prisma.badge.findMany({
+    where: {
+      name: { in: badgeNames },
+      type: 'REVIEW_MASTER',
+    },
+  })
+
+  // Batch fetch user's existing badges
+  const userBadges = await prisma.userBadge.findMany({
+    where: {
+      userId,
+      badgeId: { in: existingBadges.map((b) => b.id) },
+    },
+  })
+  const userBadgeIds = new Set(userBadges.map((ub) => ub.badgeId))
+
+  for (const milestone of eligibleMilestones) {
+    let badge = existingBadges.find((b) => b.name === milestone.badgeName)
+
+    if (!badge) {
+      try {
+        badge = await prisma.badge.create({
+          data: {
+            name: milestone.badgeName,
+            description: `Write ${milestone.count} reviews`,
+            type: 'REVIEW_MASTER',
+            criteria: JSON.stringify({ reviewsWritten: milestone.count }),
+            points: milestone.count * 5,
+          },
+        })
+        existingBadges.push(badge)
+      } catch (error: any) {
+        if (error.code === 'P2002') {
+          console.log(`[Badge] Race condition detected for "${milestone.badgeName}", refetching...`)
+          badge = await prisma.badge.findFirst({
+            where: {
               name: milestone.badgeName,
-              description: `Write ${milestone.count} reviews`,
               type: 'REVIEW_MASTER',
-              criteria: JSON.stringify({ reviewsWritten: milestone.count }),
-              points: milestone.count * 5,
             },
           })
-        } catch (error: any) {
-          if (error.code === 'P2002') {
-            console.log(`[Badge] Race condition detected for "${milestone.badgeName}", refetching...`)
-            badge = await prisma.badge.findFirst({
-              where: {
-                name: milestone.badgeName,
-                type: 'REVIEW_MASTER',
-              },
-            })
-          } else {
-            console.error(`[Badge] Failed to create review master badge "${milestone.badgeName}":`, error)
-            throw error
-          }
+          if (badge) existingBadges.push(badge)
+        } else {
+          console.error(`[Badge] Failed to create review master badge "${milestone.badgeName}":`, error)
+          throw error
         }
       }
+    }
 
-      if (!badge) {
-        console.error(`[Badge] Failed to create or fetch review master badge "${milestone.badgeName}" for user ${userId}`)
-        continue
-      }
+    if (!badge) {
+      console.error(`[Badge] Failed to create or fetch review master badge "${milestone.badgeName}" for user ${userId}`)
+      continue
+    }
 
-      const existing = await prisma.userBadge.findUnique({
-        where: {
-          userId_badgeId: {
-            userId,
-            badgeId: badge.id,
-          },
+    // Check using cached Set
+    if (!userBadgeIds.has(badge.id)) {
+      await prisma.userBadge.create({
+        data: {
+          userId,
+          badgeId: badge.id,
         },
       })
 
-      if (!existing) {
-        await prisma.userBadge.create({
-          data: {
-            userId,
-            badgeId: badge.id,
-          },
-        })
-
-        console.log(`[Badge] User ${userId} earned "${badge.name}" (Review Master)`)
-        results.push({
-          earned: true,
-          badgeId: badge.id,
-          badgeName: badge.name,
-        })
-      }
+      console.log(`[Badge] User ${userId} earned "${badge.name}" (Review Master)`)
+      results.push({
+        earned: true,
+        badgeId: badge.id,
+        badgeName: badge.name,
+      })
     }
   }
 
