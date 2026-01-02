@@ -72,13 +72,16 @@ export async function checkReadingMilestones(userId: string): Promise<BadgeCheck
         // If unique constraint fails (race condition), refetch the badge
         if (error.code === 'P2002') {
           console.log(`[Badge] Race condition detected for "${milestone.badgeName}", refetching...`)
-          badge = await prisma.badge.findFirst({
+          const refetchedBadge = await prisma.badge.findFirst({
             where: {
               name: milestone.badgeName,
               type: 'READING_MILESTONE',
             },
           })
-          if (badge) existingBadges.push(badge)
+          if (refetchedBadge) {
+            badge = refetchedBadge
+            existingBadges.push(badge)
+          }
         } else {
           console.error(`[Badge] Failed to create reading milestone badge "${milestone.badgeName}":`, error)
           throw error
@@ -174,13 +177,16 @@ export async function checkReviewMaster(userId: string): Promise<BadgeCheckResul
       } catch (error: any) {
         if (error.code === 'P2002') {
           console.log(`[Badge] Race condition detected for "${milestone.badgeName}", refetching...`)
-          badge = await prisma.badge.findFirst({
+          const refetchedBadge = await prisma.badge.findFirst({
             where: {
               name: milestone.badgeName,
               type: 'REVIEW_MASTER',
             },
           })
-          if (badge) existingBadges.push(badge)
+          if (refetchedBadge) {
+            badge = refetchedBadge
+            existingBadges.push(badge)
+          }
         } else {
           console.error(`[Badge] Failed to create review master badge "${milestone.badgeName}":`, error)
           throw error
@@ -269,12 +275,13 @@ export async function checkGenreExplorer(userId: string): Promise<BadgeCheckResu
         } catch (error: any) {
           if (error.code === 'P2002') {
             console.log(`[Badge] Race condition detected for "${badgeName}", refetching...`)
-            badge = await prisma.badge.findFirst({
+            const refetchedBadge = await prisma.badge.findFirst({
               where: {
                 name: badgeName,
                 type: 'GENRE_EXPLORER',
               },
             })
+            if (refetchedBadge) badge = refetchedBadge
           } else {
             console.error(`[Badge] Failed to create genre explorer badge "${badgeName}":`, error)
             throw error
@@ -438,12 +445,13 @@ export async function updateReadingStreak(userId: string): Promise<void> {
           } catch (error: any) {
             if (error.code === 'P2002') {
               console.log(`[Badge] Race condition detected for "${milestone.badgeName}", refetching...`)
-              badge = await prisma.badge.findFirst({
+              const refetchedBadge = await prisma.badge.findFirst({
                 where: {
                   name: milestone.badgeName,
                   type: 'READING_STREAK',
                 },
               })
+              if (refetchedBadge) badge = refetchedBadge
             } else {
               console.error(`[Badge] Failed to create streak badge "${milestone.badgeName}":`, error)
               throw error
