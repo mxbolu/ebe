@@ -14,7 +14,7 @@ export async function GET(
     const offset = (page - 1) * limit
 
     // Fetch reading entries with reviews for this book (only from finished books)
-    const reviews = await prisma.readingEntry.findMany({
+    let reviews = await prisma.readingEntry.findMany({
       where: {
         bookId: id,
         status: 'FINISHED', // Only show reviews from finished books
@@ -44,23 +44,32 @@ export async function GET(
         },
       },
       orderBy:
-        sortBy === 'helpful'
-          ? { helpfulMarks: { _count: 'desc' } }
-          : sortBy === 'highest'
+        sortBy === 'highest'
           ? { rating: 'desc' }
           : sortBy === 'lowest'
           ? { rating: 'asc' }
           : { createdAt: 'desc' },
-      take: limit + 1,
-      skip: offset,
     })
 
-    const hasMore = reviews.length > limit
-    const paginatedReviews = reviews.slice(0, limit).map((review) => ({
+    // Add helpful count and sort by helpful if needed (in-memory sorting)
+    const reviewsWithCount = reviews.map((review) => ({
       ...review,
       helpfulCount: review.helpfulMarks.length,
-      helpfulMarks: undefined, // Remove from response
     }))
+
+    // Sort by helpful if requested (client-side)
+    if (sortBy === 'helpful') {
+      reviewsWithCount.sort((a, b) => b.helpfulCount - a.helpfulCount)
+    }
+
+    // Apply pagination after sorting
+    const hasMore = reviewsWithCount.length > offset + limit
+    const paginatedReviews = reviewsWithCount
+      .slice(offset, offset + limit)
+      .map((review) => ({
+        ...review,
+        helpfulMarks: undefined, // Remove from response
+      }))
 
     return NextResponse.json({
       reviews: paginatedReviews,
