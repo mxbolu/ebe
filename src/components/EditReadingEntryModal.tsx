@@ -18,8 +18,9 @@ interface ReadingEntry {
     id: string
     title: string
     authors: string[]
-    coverImage: string | null
+    coverImageUrl: string | null
     pageCount: number | null
+    averageRating?: number | null
   }
 }
 
