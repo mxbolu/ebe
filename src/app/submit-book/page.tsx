@@ -55,7 +55,7 @@ export default function SubmitBookPage() {
           authors: formData.authors.split(',').map(a => a.trim()).filter(Boolean),
           isbn: formData.isbn.trim() || null,
           publisher: formData.publisher.trim() || null,
-          publishedDate: formData.publishedDate || null,
+          publishedYear: formData.publishedDate ? parseInt(formData.publishedDate) : null,
           pageCount: formData.pageCount ? parseInt(formData.pageCount) : null,
           description: formData.description.trim() || null,
           genres: formData.genres ? formData.genres.split(',').map(g => g.trim()).filter(Boolean) : null,
