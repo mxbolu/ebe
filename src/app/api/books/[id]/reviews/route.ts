@@ -10,6 +10,7 @@ export async function GET(
     const searchParams = request.nextUrl.searchParams
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '5')
+    const sortBy = searchParams.get('sortBy') || 'recent' // recent, helpful, highest, lowest
     const offset = (page - 1) * limit
 
     // Fetch reading entries with reviews for this book (only from finished books)
@@ -36,16 +37,30 @@ export async function GET(
             avatar: true,
           },
         },
+        helpfulMarks: {
+          select: {
+            id: true,
+          },
+        },
       },
-      orderBy: {
-        createdAt: 'desc',
-      },
+      orderBy:
+        sortBy === 'helpful'
+          ? { helpfulMarks: { _count: 'desc' } }
+          : sortBy === 'highest'
+          ? { rating: 'desc' }
+          : sortBy === 'lowest'
+          ? { rating: 'asc' }
+          : { createdAt: 'desc' },
       take: limit + 1,
       skip: offset,
     })
 
     const hasMore = reviews.length > limit
-    const paginatedReviews = reviews.slice(0, limit)
+    const paginatedReviews = reviews.slice(0, limit).map((review) => ({
+      ...review,
+      helpfulCount: review.helpfulMarks.length,
+      helpfulMarks: undefined, // Remove from response
+    }))
 
     return NextResponse.json({
       reviews: paginatedReviews,

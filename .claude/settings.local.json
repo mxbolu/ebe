@@ -19,7 +19,8 @@
       "Bash(lsof:*)",
       "Bash(node -e:*)",
       "Bash(npm run import:goodreads:*)",
-      "Bash(DATABASE_URL=\"postgresql://neondb_owner:npg_uimA5cqkx6Bh@ep-proud-hat-ahfh1gs3-pooler.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require\" npm run build:*)"
+      "Bash(DATABASE_URL=\"postgresql://neondb_owner:npg_uimA5cqkx6Bh@ep-proud-hat-ahfh1gs3-pooler.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require\" npm run build:*)",
+      "Bash(git push:*)"
     ]
   }
 }

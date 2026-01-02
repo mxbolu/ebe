@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import prisma from '@/lib/prisma'
 import { authenticateRequest } from '@/lib/auth/middleware'
+import { checkAllBadges, updateReadingStreak } from '@/lib/badges'
 
 /**
  * Helper function to update a book's average rating and total ratings
@@ -188,6 +189,14 @@ export async function PATCH(
     // Recalculate book's average rating if rating was changed
     if (data.rating !== undefined || (data.status !== undefined && data.status !== 'FINISHED')) {
       await updateBookAverageRating(existingEntry.bookId)
+    }
+
+    // Check for badges and update streak if book was marked as finished
+    if (data.status === 'FINISHED') {
+      await Promise.all([
+        updateReadingStreak(user.userId),
+        checkAllBadges(user.userId),
+      ])
     }
 
     return NextResponse.json({ entry }, { status: 200 })

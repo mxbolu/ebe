@@ -46,6 +46,10 @@ enum BadgeType {
   READING_MILESTONE
   REVIEW_MASTER
   EARLY_ADOPTER
+  GENRE_EXPLORER
+  READING_STREAK
+  SPEED_READER
+  BOOKWORM
 }
 
 // ============================================
@@ -97,6 +101,9 @@ model User {
   quotes            Quote[]
   readingSessions   ReadingSession[]
   activities        Activity[]
+  userChallenges    UserChallenge[]
+  readingStreak     ReadingStreak?
+  reviewHelpfuls    ReviewHelpful[]
 
   @@index([email])
   @@index([username])
@@ -279,6 +286,7 @@ model ReadingEntry {
 
   // Phase 3 Relations
   tags              ReadingEntryTag[]
+  helpfulMarks      ReviewHelpful[]
 
   @@unique([userId, bookId]) // User can only have one entry per book
   @@index([userId])
@@ -401,6 +409,75 @@ model UserBadge {
   @@unique([userId, badgeId]) // User can only earn each badge once
   @@index([userId])
   @@index([badgeId])
+}
+
+model ReadingChallenge {
+  id                  String    @id @default(cuid())
+  name                String
+  description         String    @db.Text
+  type                String    // "monthly", "genre", "pages", "author"
+  targetValue         Int       // e.g., 5 books, 1000 pages
+  startDate           DateTime
+  endDate             DateTime
+  isActive            Boolean   @default(true)
+  iconUrl             String?
+
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  // Relations
+  userChallenges      UserChallenge[]
+}
+
+model UserChallenge {
+  id                  String    @id @default(cuid())
+  userId              String
+  challengeId         String
+  currentValue        Int       @default(0)
+  isCompleted         Boolean   @default(false)
+  completedAt         DateTime?
+
+  joinedAt            DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  // Relations
+  user                User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  challenge           ReadingChallenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, challengeId])
+  @@index([userId])
+  @@index([challengeId])
+  @@index([isCompleted])
+}
+
+model ReadingStreak {
+  id                  String    @id @default(cuid())
+  userId              String    @unique
+  currentStreak       Int       @default(0)
+  longestStreak       Int       @default(0)
+  lastReadDate        DateTime?
+
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  // Relations
+  user                User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model ReviewHelpful {
+  id                  String    @id @default(cuid())
+  userId              String
+  readingEntryId      String    // The review being marked helpful
+
+  createdAt           DateTime  @default(now())
+
+  // Relations
+  user                User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  readingEntry        ReadingEntry @relation(fields: [readingEntryId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, readingEntryId])
+  @@index([userId])
+  @@index([readingEntryId])
 }
 
 // ============================================
