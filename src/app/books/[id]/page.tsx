@@ -368,12 +368,12 @@ export default function BookDetailPage() {
                         <p className="text-sm text-indigo-700 mb-3">
                           You've finished this book. Help other readers by rating and reviewing it.
                         </p>
-                        <button
-                          onClick={() => setIsEditModalOpen(true)}
-                          className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg transition"
+                        <Link
+                          href="/dashboard"
+                          className="inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg transition"
                         >
                           Add Rating & Review
-                        </button>
+                        </Link>
                       </div>
                     </div>
                   </div>
