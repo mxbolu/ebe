@@ -87,6 +87,17 @@ model User {
   badges            UserBadge[]
   gamificationStats GamificationStats?
 
+  // Phase 3 Relations
+  followers         Follow[]          @relation("UserFollowers")
+  following         Follow[]          @relation("UserFollowing")
+  collections       Collection[]
+  readingGoals      ReadingGoal[]
+  notes             Note[]
+  highlights        Highlight[]
+  quotes            Quote[]
+  readingSessions   ReadingSession[]
+  activities        Activity[]
+
   @@index([email])
   @@index([username])
   @@index([role])
@@ -154,6 +165,13 @@ model Book {
   readingEntries      ReadingEntry[]
   shelfBooks          ShelfBook[]
   editSuggestions     BookEditSuggestion[]
+
+  // Phase 3 Relations
+  collectionBooks     CollectionBook[]
+  notes               Note[]
+  highlights          Highlight[]
+  quotes              Quote[]
+  readingSessions     ReadingSession[]
 
   @@index([title])
   @@index([authors])
@@ -258,6 +276,9 @@ model ReadingEntry {
   user              User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   book              Book           @relation(fields: [bookId], references: [id], onDelete: Cascade)
   progress          ReadingProgress?
+
+  // Phase 3 Relations
+  tags              ReadingEntryTag[]
 
   @@unique([userId, bookId]) // User can only have one entry per book
   @@index([userId])
@@ -380,4 +401,208 @@ model UserBadge {
   @@unique([userId, badgeId]) // User can only earn each badge once
   @@index([userId])
   @@index([badgeId])
+}
+
+// ============================================
+// PHASE 3: SOCIAL FEATURES (Track A)
+// ============================================
+
+model Follow {
+  id                String    @id @default(cuid())
+  followerId        String
+  followingId       String
+
+  createdAt         DateTime  @default(now())
+
+  // Relations
+  follower          User      @relation("UserFollowers", fields: [followerId], references: [id], onDelete: Cascade)
+  following         User      @relation("UserFollowing", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId]) // Can't follow same user twice
+  @@index([followerId])
+  @@index([followingId])
+}
+
+model Activity {
+  id                String    @id @default(cuid())
+  userId            String
+  type              String    // "finished_book", "started_book", "rated_book", "reviewed_book", "followed_user"
+  data              String    @db.Text // JSON data about the activity
+
+  createdAt         DateTime  @default(now())
+
+  // Relations
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+  @@index([type])
+}
+
+// ============================================
+// PHASE 3: ADVANCED BOOK MANAGEMENT (Track B)
+// ============================================
+
+model Collection {
+  id                String    @id @default(cuid())
+  userId            String
+  name              String
+  description       String?   @db.Text
+  isPublic          Boolean   @default(false)
+
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  // Relations
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  books             CollectionBook[]
+
+  @@index([userId])
+  @@index([isPublic])
+}
+
+model CollectionBook {
+  id                String    @id @default(cuid())
+  collectionId      String
+  bookId            String
+
+  addedAt           DateTime  @default(now())
+
+  // Relations
+  collection        Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  book              Book      @relation(fields: [bookId], references: [id], onDelete: Cascade)
+
+  @@unique([collectionId, bookId])
+  @@index([collectionId])
+  @@index([bookId])
+}
+
+model Tag {
+  id                String    @id @default(cuid())
+  userId            String
+  name              String
+
+  createdAt         DateTime  @default(now())
+
+  // Relations
+  readingEntries    ReadingEntryTag[]
+
+  @@unique([userId, name]) // User can't have duplicate tag names
+  @@index([userId])
+}
+
+model ReadingEntryTag {
+  id                String    @id @default(cuid())
+  readingEntryId    String
+  tagId             String
+
+  createdAt         DateTime  @default(now())
+
+  // Relations
+  readingEntry      ReadingEntry @relation(fields: [readingEntryId], references: [id], onDelete: Cascade)
+  tag               Tag       @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([readingEntryId, tagId])
+  @@index([readingEntryId])
+  @@index([tagId])
+}
+
+model ReadingGoal {
+  id                String    @id @default(cuid())
+  userId            String
+  year              Int
+  targetBooks       Int
+  currentBooks      Int       @default(0)
+
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  // Relations
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, year]) // One goal per year per user
+  @@index([userId])
+  @@index([year])
+}
+
+// ============================================
+// PHASE 3: READING EXPERIENCE (Track D)
+// ============================================
+
+model Note {
+  id                String    @id @default(cuid())
+  userId            String
+  bookId            String
+  content           String    @db.Text
+  page              Int?
+  chapter           String?
+
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  // Relations
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  book              Book      @relation(fields: [bookId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([bookId])
+  @@index([createdAt])
+}
+
+model Highlight {
+  id                String    @id @default(cuid())
+  userId            String
+  bookId            String
+  text              String    @db.Text
+  page              Int?
+  chapter           String?
+  color             String?   @default("yellow")
+
+  createdAt         DateTime  @default(now())
+
+  // Relations
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  book              Book      @relation(fields: [bookId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([bookId])
+}
+
+model Quote {
+  id                String    @id @default(cuid())
+  userId            String
+  bookId            String
+  text              String    @db.Text
+  page              Int?
+  isFavorite        Boolean   @default(false)
+
+  createdAt         DateTime  @default(now())
+
+  // Relations
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  book              Book      @relation(fields: [bookId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([bookId])
+  @@index([isFavorite])
+}
+
+model ReadingSession {
+  id                String    @id @default(cuid())
+  userId            String
+  bookId            String
+  startTime         DateTime
+  endTime           DateTime?
+  durationMinutes   Int?
+  pagesRead         Int?
+
+  createdAt         DateTime  @default(now())
+
+  // Relations
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  book              Book      @relation(fields: [bookId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([bookId])
+  @@index([startTime])
 }
