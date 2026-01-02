@@ -210,22 +210,6 @@ export default function ReadingLists() {
         </button>
       </div>
 
-      {/* New Widgets Row - Only show when viewing all books */}
-      {filter === 'all' && !loading && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <ReadingGoal />
-          <TrendingBooks />
-          <div className="lg:col-span-1">
-            {/* Placeholder for future widget */}
-          </div>
-        </div>
-      )}
-
-      {/* Recommendations Section - Only show when viewing all books */}
-      {filter === 'all' && !loading && (
-        <Recommendations />
-      )}
-
       {/* Error Message */}
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
@@ -277,6 +261,22 @@ export default function ReadingLists() {
             />
           ))}
         </div>
+      )}
+
+      {/* New Widgets Row - Only show when viewing all books */}
+      {filter === 'all' && !loading && entries.length > 0 && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <ReadingGoal />
+          <TrendingBooks />
+          <div className="lg:col-span-1">
+            {/* Placeholder for future widget */}
+          </div>
+        </div>
+      )}
+
+      {/* Recommendations Section - Only show when viewing all books */}
+      {filter === 'all' && !loading && entries.length > 0 && (
+        <Recommendations />
       )}
     </div>
   )
