@@ -36,6 +36,38 @@ async function updateBookAverageRating(bookId: string) {
   })
 }
 
+/**
+ * Helper function to update reading goal's current book count
+ */
+async function updateReadingGoal(userId: string, finishDate: Date | null) {
+  if (!finishDate) return
+
+  const year = finishDate.getFullYear()
+
+  // Count books finished in this year
+  const currentBooks = await prisma.readingEntry.count({
+    where: {
+      userId,
+      status: 'FINISHED',
+      finishDate: {
+        gte: new Date(`${year}-01-01`),
+        lt: new Date(`${year + 1}-01-01`),
+      },
+    },
+  })
+
+  // Update the goal if it exists
+  await prisma.readingGoal.updateMany({
+    where: {
+      userId,
+      year,
+    },
+    data: {
+      currentBooks,
+    },
+  })
+}
+
 const updateEntrySchema = z.object({
   status: z.enum(['WANT_TO_READ', 'CURRENTLY_READING', 'FINISHED', 'DID_NOT_FINISH']).optional(),
   rating: z.number().min(1.0).max(10.0).nullable().optional(),
@@ -191,6 +223,14 @@ export async function PATCH(
       await updateBookAverageRating(existingEntry.bookId)
     }
 
+    // Update reading goal if status changed to/from FINISHED
+    const statusChanged = data.status !== undefined && data.status !== existingEntry.status
+    const affectsGoal = statusChanged && (data.status === 'FINISHED' || existingEntry.status === 'FINISHED')
+
+    if (affectsGoal) {
+      await updateReadingGoal(user.userId, entry.finishDate || existingEntry.finishDate)
+    }
+
     // Check for badges and update streak if book was marked as finished
     if (data.status === 'FINISHED') {
       await Promise.all([
@@ -244,6 +284,7 @@ export async function DELETE(
     }
 
     const bookId = existingEntry.bookId
+    const wasFinished = existingEntry.status === 'FINISHED'
 
     // Delete reading entry (progress will be deleted via cascade)
     await prisma.readingEntry.delete({
@@ -252,6 +293,11 @@ export async function DELETE(
 
     // Recalculate book's average rating
     await updateBookAverageRating(bookId)
+
+    // Update reading goal if a finished book was deleted
+    if (wasFinished && existingEntry.finishDate) {
+      await updateReadingGoal(user.userId, existingEntry.finishDate)
+    }
 
     return NextResponse.json(
       { message: 'Reading entry deleted successfully' },
