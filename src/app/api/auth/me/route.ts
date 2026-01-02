@@ -23,6 +23,7 @@ export async function GET(request: NextRequest) {
         avatar: true,
         bio: true,
         role: true,
+        isEmailVerified: true,
         showContributions: true,
         createdAt: true,
         updatedAt: true,
