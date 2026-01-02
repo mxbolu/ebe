@@ -2,6 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import ReadingEntryCard from './ReadingEntryCard'
+import ReadingGoal from './ReadingGoal'
+import Recommendations from './Recommendations'
+import TrendingBooks from './TrendingBooks'
 
 interface ReadingEntry {
   id: string
@@ -204,6 +207,22 @@ export default function ReadingLists() {
           Finished ({stats?.byStatus.finished || 0})
         </button>
       </div>
+
+      {/* New Widgets Row - Only show when viewing all books */}
+      {filter === 'all' && !loading && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <ReadingGoal />
+          <TrendingBooks />
+          <div className="lg:col-span-1">
+            {/* Placeholder for future widget */}
+          </div>
+        </div>
+      )}
+
+      {/* Recommendations Section - Only show when viewing all books */}
+      {filter === 'all' && !loading && (
+        <Recommendations />
+      )}
 
       {/* Error Message */}
       {error && (

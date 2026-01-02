@@ -6,6 +6,7 @@ import Link from 'next/link'
 import RatingInput from '@/components/RatingInput'
 import BookReviews from '@/components/BookReviews'
 import RelatedBooks from '@/components/RelatedBooks'
+import NotesAndQuotes from '@/components/NotesAndQuotes'
 import { BookDetailSkeleton } from '@/components/LoadingSkeleton'
 import ErrorBoundary from '@/components/ErrorBoundary'
 import { useToast } from '@/components/ToastContainer'
@@ -405,6 +406,9 @@ export default function BookDetailPage() {
                 )}
               </div>
             )}
+
+            {/* Notes & Quotes Section */}
+            {readingEntry && <NotesAndQuotes bookId={bookId} />}
 
             {/* Reviews Section */}
             <BookReviews bookId={bookId} />
