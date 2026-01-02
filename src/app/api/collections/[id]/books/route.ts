@@ -8,13 +8,13 @@ import { authenticateRequest } from '@/lib/auth/middleware'
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const authResult = authenticateRequest(request)
   if (authResult instanceof NextResponse) return authResult
 
   const { user } = authResult
-  const { id: collectionId } = params
+  const { id: collectionId } = await params
 
   try {
     const body = await request.json()
@@ -88,13 +88,13 @@ export async function POST(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const authResult = authenticateRequest(request)
   if (authResult instanceof NextResponse) return authResult
 
   const { user } = authResult
-  const { id: collectionId } = params
+  const { id: collectionId } = await params
   const { searchParams } = new URL(request.url)
   const bookId = searchParams.get('bookId')
 

@@ -8,13 +8,13 @@ import { authenticateRequest } from '@/lib/auth/middleware'
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const authResult = authenticateRequest(request)
   if (authResult instanceof NextResponse) return authResult
 
   const { user } = authResult
-  const { id } = params
+  const { id } = await params
 
   try {
     const collection = await prisma.collection.findUnique({
@@ -78,13 +78,13 @@ export async function GET(
  */
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const authResult = authenticateRequest(request)
   if (authResult instanceof NextResponse) return authResult
 
   const { user } = authResult
-  const { id } = params
+  const { id } = await params
 
   try {
     const body = await request.json()
@@ -134,13 +134,13 @@ export async function PATCH(
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   const authResult = authenticateRequest(request)
   if (authResult instanceof NextResponse) return authResult
 
   const { user } = authResult
-  const { id } = params
+  const { id } = await params
 
   try {
     // Check ownership
