@@ -328,12 +328,13 @@ export default function BookDetailPage() {
               {book.genres && book.genres.length > 0 && (
                 <div className="mt-4 flex flex-wrap gap-2">
                   {book.genres.map((genre) => (
-                    <span
+                    <Link
                       key={genre}
-                      className="px-3 py-1 bg-indigo-50 text-indigo-700 text-sm font-medium rounded-full"
+                      href={`/genres/${encodeURIComponent(genre)}`}
+                      className="px-3 py-1 bg-indigo-50 text-indigo-700 text-sm font-medium rounded-full hover:bg-indigo-100 transition cursor-pointer"
                     >
                       {genre}
-                    </span>
+                    </Link>
                   ))}
                 </div>
               )}
