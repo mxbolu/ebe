@@ -115,9 +115,9 @@ export default function EditReadingEntryModal({
         {/* Header */}
         <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            {entry.book.coverImage && (
+            {entry.book.coverImageUrl && (
               <img
-                src={entry.book.coverImage}
+                src={entry.book.coverImageUrl}
                 alt={entry.book.title}
                 className="w-12 h-18 object-cover rounded shadow-sm"
               />
