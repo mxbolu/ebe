@@ -31,7 +31,7 @@ export async function checkReadingMilestones(userId: string): Promise<BadgeCheck
 
   for (const milestone of milestones) {
     if (finishedCount >= milestone.count) {
-      // Check if badge exists
+      // Check if badge exists or create it (with race condition handling)
       let badge = await prisma.badge.findFirst({
         where: {
           name: milestone.badgeName,
@@ -41,16 +41,33 @@ export async function checkReadingMilestones(userId: string): Promise<BadgeCheck
 
       // Create badge if it doesn't exist
       if (!badge) {
-        badge = await prisma.badge.create({
-          data: {
-            name: milestone.badgeName,
-            description: `Read ${milestone.count} books`,
-            type: 'READING_MILESTONE',
-            criteria: JSON.stringify({ booksFinished: milestone.count }),
-            points: milestone.count * 10,
-          },
-        })
+        try {
+          badge = await prisma.badge.create({
+            data: {
+              name: milestone.badgeName,
+              description: `Read ${milestone.count} books`,
+              type: 'READING_MILESTONE',
+              criteria: JSON.stringify({ booksFinished: milestone.count }),
+              points: milestone.count * 10,
+            },
+          })
+        } catch (error: any) {
+          // If unique constraint fails (race condition), refetch the badge
+          if (error.code === 'P2002') {
+            badge = await prisma.badge.findFirst({
+              where: {
+                name: milestone.badgeName,
+                type: 'READING_MILESTONE',
+              },
+            })
+          } else {
+            throw error
+          }
+        }
       }
+
+      // Skip if badge creation/fetch failed
+      if (!badge) continue
 
       // Check if user already has this badge
       const existing = await prisma.userBadge.findUnique({
@@ -114,16 +131,31 @@ export async function checkReviewMaster(userId: string): Promise<BadgeCheckResul
       })
 
       if (!badge) {
-        badge = await prisma.badge.create({
-          data: {
-            name: milestone.badgeName,
-            description: `Write ${milestone.count} reviews`,
-            type: 'REVIEW_MASTER',
-            criteria: JSON.stringify({ reviewsWritten: milestone.count }),
-            points: milestone.count * 5,
-          },
-        })
+        try {
+          badge = await prisma.badge.create({
+            data: {
+              name: milestone.badgeName,
+              description: `Write ${milestone.count} reviews`,
+              type: 'REVIEW_MASTER',
+              criteria: JSON.stringify({ reviewsWritten: milestone.count }),
+              points: milestone.count * 5,
+            },
+          })
+        } catch (error: any) {
+          if (error.code === 'P2002') {
+            badge = await prisma.badge.findFirst({
+              where: {
+                name: milestone.badgeName,
+                type: 'REVIEW_MASTER',
+              },
+            })
+          } else {
+            throw error
+          }
+        }
       }
+
+      if (!badge) continue
 
       const existing = await prisma.userBadge.findUnique({
         where: {
@@ -196,16 +228,31 @@ export async function checkGenreExplorer(userId: string): Promise<BadgeCheckResu
       })
 
       if (!badge) {
-        badge = await prisma.badge.create({
-          data: {
-            name: badgeName,
-            description: `Read 5 ${genre} books`,
-            type: 'GENRE_EXPLORER',
-            criteria: JSON.stringify({ genre, booksInGenre: 5 }),
-            points: 25,
-          },
-        })
+        try {
+          badge = await prisma.badge.create({
+            data: {
+              name: badgeName,
+              description: `Read 5 ${genre} books`,
+              type: 'GENRE_EXPLORER',
+              criteria: JSON.stringify({ genre, booksInGenre: 5 }),
+              points: 25,
+            },
+          })
+        } catch (error: any) {
+          if (error.code === 'P2002') {
+            badge = await prisma.badge.findFirst({
+              where: {
+                name: badgeName,
+                type: 'GENRE_EXPLORER',
+              },
+            })
+          } else {
+            throw error
+          }
+        }
       }
+
+      if (!badge) continue
 
       const existing = await prisma.userBadge.findUnique({
         where: {
@@ -335,16 +382,31 @@ export async function updateReadingStreak(userId: string): Promise<void> {
         })
 
         if (!badge) {
-          badge = await prisma.badge.create({
-            data: {
-              name: milestone.badgeName,
-              description: `Read for ${milestone.days} consecutive days`,
-              type: 'READING_STREAK',
-              criteria: JSON.stringify({ streakDays: milestone.days }),
-              points: milestone.days,
-            },
-          })
+          try {
+            badge = await prisma.badge.create({
+              data: {
+                name: milestone.badgeName,
+                description: `Read for ${milestone.days} consecutive days`,
+                type: 'READING_STREAK',
+                criteria: JSON.stringify({ streakDays: milestone.days }),
+                points: milestone.days,
+              },
+            })
+          } catch (error: any) {
+            if (error.code === 'P2002') {
+              badge = await prisma.badge.findFirst({
+                where: {
+                  name: milestone.badgeName,
+                  type: 'READING_STREAK',
+                },
+              })
+            } else {
+              throw error
+            }
+          }
         }
+
+        if (!badge) continue
 
         const existing = await prisma.userBadge.findUnique({
           where: {
