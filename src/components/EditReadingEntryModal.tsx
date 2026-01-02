@@ -54,6 +54,9 @@ export default function EditReadingEntryModal({
 
   // Reset form when entry changes
   useEffect(() => {
+    console.log('[EditReadingEntryModal] Entry:', entry)
+    console.log('[EditReadingEntryModal] Entry status:', entry.status)
+
     setFormData({
       status: entry.status,
       rating: entry.rating,
@@ -254,35 +257,38 @@ export default function EditReadingEntryModal({
           )}
 
           {/* Review - Only for finished books */}
-          {formData.status === 'FINISHED' ? (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Review
-              </label>
-              <textarea
-                value={formData.review}
-                onChange={(e) => setFormData({ ...formData, review: e.target.value })}
-                rows={4}
-                placeholder="Share your thoughts about this book..."
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none resize-none"
-              />
-              <p className="mt-1 text-xs text-gray-500">
-                {formData.review.length} characters
-              </p>
-            </div>
-          ) : (
-            <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
-              <div className="flex items-start gap-3">
-                <svg className="w-5 h-5 text-indigo-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <div>
-                  <p className="text-sm font-medium text-indigo-900">Rate and review after finishing</p>
-                  <p className="text-xs text-indigo-700 mt-1">Mark this book as "Finished" to add your rating and review.</p>
+          {(() => {
+            console.log('[EditReadingEntryModal] Rendering review section. formData.status:', formData.status)
+            return formData.status === 'FINISHED' ? (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Review
+                </label>
+                <textarea
+                  value={formData.review}
+                  onChange={(e) => setFormData({ ...formData, review: e.target.value })}
+                  rows={4}
+                  placeholder="Share your thoughts about this book..."
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none resize-none"
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                  {formData.review.length} characters
+                </p>
+              </div>
+            ) : (
+              <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <svg className="w-5 h-5 text-indigo-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <div>
+                    <p className="text-sm font-medium text-indigo-900">Rate and review after finishing</p>
+                    <p className="text-xs text-indigo-700 mt-1">Mark this book as "Finished" to add your rating and review.</p>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
+            )
+          })()}
 
           {/* Personal Notes */}
           <div>
