@@ -179,15 +179,18 @@ export async function PATCH(
 
     if (data.status !== undefined) updateData.status = data.status
 
+    // Determine final status (new status or existing status)
+    const finalStatus = data.status !== undefined ? data.status : existingEntry.status
+
     // Only allow rating and review for FINISHED books
-    if (data.status !== undefined && data.status !== 'FINISHED') {
-      // Clear rating and review if status is changed from FINISHED to something else
-      updateData.rating = null
-      updateData.review = null
-    } else {
-      // Only update rating and review if status is FINISHED or staying FINISHED
+    if (finalStatus === 'FINISHED') {
+      // Allow updating rating and review for finished books
       if (data.rating !== undefined) updateData.rating = data.rating
       if (data.review !== undefined) updateData.review = data.review
+    } else {
+      // Clear rating and review if book is not finished
+      updateData.rating = null
+      updateData.review = null
     }
 
     if (data.notes !== undefined) updateData.notes = data.notes
