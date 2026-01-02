@@ -84,30 +84,79 @@ export default function ReadingLists() {
     FINISHED: entries.filter(e => e.status === 'FINISHED').length,
   }
 
+  const currentlyReadingBooks = entries.filter(e => e.status === 'CURRENTLY_READING')
+
   return (
     <div className="space-y-6">
+      {/* Continue Reading Widget */}
+      {currentlyReadingBooks.length > 0 && (
+        <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border-2 border-green-200 p-6">
+          <div className="flex items-center gap-2 mb-4">
+            <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+            </svg>
+            <h2 className="text-xl font-bold text-gray-900">Continue Reading</h2>
+            <span className="ml-auto text-sm text-gray-600">{currentlyReadingBooks.length} {currentlyReadingBooks.length === 1 ? 'book' : 'books'}</span>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {currentlyReadingBooks.map((entry) => (
+              <ReadingEntryCard
+                key={entry.id}
+                entry={entry}
+                onUpdate={handleEntryUpdated}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Stats Overview */}
       {stats && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-white p-6 rounded-lg border border-gray-200">
-            <div className="text-2xl font-bold text-indigo-600">{stats.totalBooks}</div>
-            <div className="text-sm text-gray-600">Total Books</div>
-          </div>
-          <div className="bg-white p-6 rounded-lg border border-gray-200">
-            <div className="text-2xl font-bold text-green-600">{stats.booksFinished}</div>
-            <div className="text-sm text-gray-600">Finished</div>
-          </div>
-          <div className="bg-white p-6 rounded-lg border border-gray-200">
-            <div className="text-2xl font-bold text-yellow-600">
-              {stats.averageRating > 0 ? stats.averageRating.toFixed(1) : 'N/A'}
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="bg-white p-6 rounded-lg border border-gray-200">
+              <div className="text-2xl font-bold text-indigo-600">{stats.total}</div>
+              <div className="text-sm text-gray-600">Total Books</div>
             </div>
-            <div className="text-sm text-gray-600">Avg Rating</div>
-          </div>
-          <div className="bg-white p-6 rounded-lg border border-gray-200">
-            <div className="text-2xl font-bold text-purple-600">
-              {stats.totalPagesRead.toLocaleString()}
+            <div className="bg-white p-6 rounded-lg border border-gray-200">
+              <div className="text-2xl font-bold text-green-600">{stats.byStatus.finished}</div>
+              <div className="text-sm text-gray-600">Finished</div>
             </div>
-            <div className="text-sm text-gray-600">Pages Read</div>
+            <div className="bg-white p-6 rounded-lg border border-gray-200">
+              <div className="text-2xl font-bold text-yellow-600">
+                {stats.averageRating > 0 ? stats.averageRating.toFixed(1) : 'N/A'}
+              </div>
+              <div className="text-sm text-gray-600">Avg Rating</div>
+            </div>
+            <div className="bg-white p-6 rounded-lg border border-gray-200">
+              <div className="text-2xl font-bold text-purple-600">
+                {stats.totalPagesRead.toLocaleString()}
+              </div>
+              <div className="text-sm text-gray-600">Pages Read</div>
+            </div>
+          </div>
+
+          {/* Additional Stats Row */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="bg-white p-6 rounded-lg border border-gray-200">
+              <div className="text-2xl font-bold text-orange-600">{stats.booksThisYear}</div>
+              <div className="text-sm text-gray-600">Books This Year</div>
+            </div>
+            <div className="bg-white p-6 rounded-lg border border-gray-200">
+              <div className="text-2xl font-bold text-blue-600">{stats.booksThisMonth}</div>
+              <div className="text-sm text-gray-600">Books This Month</div>
+            </div>
+            <div className="bg-white p-6 rounded-lg border border-gray-200">
+              <div className="text-2xl font-bold text-red-600">
+                {stats.currentStreak}
+                <span className="text-lg ml-1">🔥</span>
+              </div>
+              <div className="text-sm text-gray-600">Day Streak</div>
+            </div>
+            <div className="bg-white p-6 rounded-lg border border-gray-200">
+              <div className="text-2xl font-bold text-pink-600">{stats.favorites}</div>
+              <div className="text-sm text-gray-600">Favorites</div>
+            </div>
           </div>
         </div>
       )}
@@ -122,7 +171,7 @@ export default function ReadingLists() {
               : 'text-gray-700 hover:bg-gray-100'
           }`}
         >
-          All ({stats?.totalBooks || 0})
+          All ({stats?.total || 0})
         </button>
         <button
           onClick={() => setFilter('WANT_TO_READ')}
@@ -132,7 +181,7 @@ export default function ReadingLists() {
               : 'text-gray-700 hover:bg-gray-100'
           }`}
         >
-          Want to Read ({stats?.wantToRead || 0})
+          Want to Read ({stats?.byStatus.wantToRead || 0})
         </button>
         <button
           onClick={() => setFilter('CURRENTLY_READING')}
@@ -142,7 +191,7 @@ export default function ReadingLists() {
               : 'text-gray-700 hover:bg-gray-100'
           }`}
         >
-          Reading ({stats?.currentlyReading || 0})
+          Reading ({stats?.byStatus.currentlyReading || 0})
         </button>
         <button
           onClick={() => setFilter('FINISHED')}
@@ -152,7 +201,7 @@ export default function ReadingLists() {
               : 'text-gray-700 hover:bg-gray-100'
           }`}
         >
-          Finished ({stats?.finished || 0})
+          Finished ({stats?.byStatus.finished || 0})
         </button>
       </div>
 

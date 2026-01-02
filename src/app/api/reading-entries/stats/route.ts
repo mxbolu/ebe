@@ -101,6 +101,48 @@ export async function GET(request: NextRequest) {
       },
     })
 
+    // Calculate reading streak (consecutive days with reading activity)
+    const recentFinishedBooks = await prisma.readingEntry.findMany({
+      where: {
+        userId: user.userId,
+        status: 'FINISHED',
+        finishDate: { not: null },
+      },
+      orderBy: {
+        finishDate: 'desc',
+      },
+      select: {
+        finishDate: true,
+      },
+      take: 365, // Check last year
+    })
+
+    let currentStreak = 0
+    if (recentFinishedBooks.length > 0) {
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+
+      const finishDates = recentFinishedBooks
+        .map(entry => {
+          const date = new Date(entry.finishDate!)
+          date.setHours(0, 0, 0, 0)
+          return date.getTime()
+        })
+        .filter((value, index, self) => self.indexOf(value) === index) // Unique dates
+        .sort((a, b) => b - a) // Sort descending
+
+      let checkDate = today.getTime()
+      for (const finishDate of finishDates) {
+        const daysDiff = Math.floor((checkDate - finishDate) / (1000 * 60 * 60 * 24))
+        if (daysDiff <= 1) { // Same day or previous day
+          currentStreak++
+          checkDate = finishDate - (1000 * 60 * 60 * 24) // Move to previous day
+        } else {
+          break
+        }
+      }
+    }
+
     // Format status counts
     const statsByStatus = {
       wantToRead: 0,
@@ -138,6 +180,7 @@ export async function GET(request: NextRequest) {
           totalPagesRead,
           booksThisYear,
           booksThisMonth,
+          currentStreak,
         },
       },
       { status: 200 }

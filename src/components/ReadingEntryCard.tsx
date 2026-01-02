@@ -35,6 +35,7 @@ interface ReadingEntryCardProps {
 export default function ReadingEntryCard({ entry, onUpdate }: ReadingEntryCardProps) {
   const [showEditModal, setShowEditModal] = useState(false)
   const [updating, setUpdating] = useState(false)
+  const [showStatusMenu, setShowStatusMenu] = useState(false)
 
   const statusColors = {
     WANT_TO_READ: 'bg-blue-100 text-blue-800',
@@ -91,6 +92,47 @@ export default function ReadingEntryCard({ entry, onUpdate }: ReadingEntryCardPr
     } finally {
       setUpdating(false)
     }
+  }
+
+  const handleStatusChange = async (newStatus: string) => {
+    setUpdating(true)
+    setShowStatusMenu(false)
+    try {
+      const updateData: any = { status: newStatus }
+
+      // Auto-set dates based on status
+      if (newStatus === 'CURRENTLY_READING' && !entry.startDate) {
+        updateData.startDate = new Date().toISOString()
+      }
+      if (newStatus === 'FINISHED' && !entry.finishDate) {
+        updateData.finishDate = new Date().toISOString()
+      }
+
+      const response = await fetch(`/api/reading-entries/${entry.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updateData),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to update status')
+      }
+
+      onUpdate()
+    } catch (error) {
+      console.error('Update failed:', error)
+      alert('Failed to update status. Please try again.')
+    } finally {
+      setUpdating(false)
+    }
+  }
+
+  const handleStartReading = async () => {
+    await handleStatusChange('CURRENTLY_READING')
+  }
+
+  const handleFinishReading = async () => {
+    await handleStatusChange('FINISHED')
   }
 
   const progress = entry.currentPage && entry.book.pageCount
@@ -217,11 +259,65 @@ export default function ReadingEntryCard({ entry, onUpdate }: ReadingEntryCardPr
           )}
         </div>
 
+        {/* Quick Actions */}
+        {entry.status === 'WANT_TO_READ' && (
+          <div className="mt-4">
+            <button
+              onClick={handleStartReading}
+              disabled={updating}
+              className="w-full bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg transition text-sm disabled:opacity-50"
+            >
+              Start Reading
+            </button>
+          </div>
+        )}
+
+        {entry.status === 'CURRENTLY_READING' && (
+          <div className="mt-4">
+            <button
+              onClick={handleFinishReading}
+              disabled={updating}
+              className="w-full bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-4 rounded-lg transition text-sm disabled:opacity-50"
+            >
+              Mark as Finished
+            </button>
+          </div>
+        )}
+
         {/* Actions */}
         <div className="mt-4 flex gap-2">
+          <div className="relative flex-1">
+            <button
+              onClick={() => setShowStatusMenu(!showStatusMenu)}
+              disabled={updating}
+              className="w-full bg-gray-50 hover:bg-gray-100 text-gray-700 font-medium py-2 px-4 rounded-lg transition text-sm disabled:opacity-50 flex items-center justify-between"
+            >
+              <span>Move to...</span>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+
+            {showStatusMenu && (
+              <div className="absolute bottom-full mb-1 left-0 right-0 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+                {Object.entries(statusLabels).map(([status, label]) => (
+                  status !== entry.status && (
+                    <button
+                      key={status}
+                      onClick={() => handleStatusChange(status)}
+                      className="w-full text-left px-4 py-2 hover:bg-gray-50 text-sm first:rounded-t-lg last:rounded-b-lg"
+                    >
+                      {label}
+                    </button>
+                  )
+                ))}
+              </div>
+            )}
+          </div>
+
           <button
             onClick={() => setShowEditModal(true)}
-            className="flex-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-medium py-2 px-4 rounded-lg transition text-sm"
+            className="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-medium py-2 px-4 rounded-lg transition text-sm"
           >
             Edit
           </button>
