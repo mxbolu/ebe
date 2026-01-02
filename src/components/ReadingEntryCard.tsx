@@ -19,7 +19,7 @@ interface ReadingEntry {
     id: string
     title: string
     authors: string[]
-    coverImage: string | null
+    coverImageUrl: string | null
     pageCount: number | null
     averageRating: number | null
   }
@@ -129,9 +129,9 @@ export default function ReadingEntryCard({ entry, onUpdate }: ReadingEntryCardPr
 
         {/* Book Info */}
         <div className="flex gap-3 mb-3">
-          {entry.book.coverImage ? (
+          {entry.book.coverImageUrl ? (
             <img
-              src={entry.book.coverImage}
+              src={entry.book.coverImageUrl}
               alt={entry.book.title}
               className="w-16 h-24 object-cover rounded shadow-sm flex-shrink-0"
             />
