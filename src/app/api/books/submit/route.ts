@@ -19,11 +19,10 @@ const submitBookSchema = z.object({
 export async function POST(request: NextRequest) {
   try {
     // Verify authentication
-    const authResult = await authenticateRequest(request)
-    if (!authResult.valid || !authResult.payload) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
-    }
+    const authResult = authenticateRequest(request)
+    if (authResult instanceof NextResponse) return authResult
 
+    const { user } = authResult
     const body = await request.json()
 
     // Validate input
@@ -85,7 +84,7 @@ export async function POST(request: NextRequest) {
         genres: data.genres || [],
         language: data.language || 'English',
         coverImage: data.coverImageUrl,
-        userId: authResult.payload.userId,
+        userId: user.userId,
         status: 'PENDING',
       },
     })
