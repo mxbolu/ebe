@@ -21,14 +21,28 @@ export interface EmailOptions {
 
 export async function sendEmail(options: EmailOptions): Promise<boolean> {
   try {
-    // Skip email sending in development if SMTP is not configured
+    console.log('📧 [EMAIL SERVICE] Attempting to send email...')
+    console.log('Environment:', process.env.NODE_ENV)
+    console.log('To:', options.to)
+    console.log('Subject:', options.subject)
+    console.log('SMTP Config Check:')
+    console.log('  - SMTP_HOST:', process.env.SMTP_HOST || 'NOT SET')
+    console.log('  - SMTP_PORT:', process.env.SMTP_PORT || 'NOT SET')
+    console.log('  - SMTP_USER:', process.env.SMTP_USER ? '✓ SET' : '✗ NOT SET')
+    console.log('  - SMTP_PASS:', process.env.SMTP_PASS ? '✓ SET' : '✗ NOT SET')
+    console.log('  - EMAIL_FROM:', process.env.EMAIL_FROM_ADDRESS || 'NOT SET')
+
+    // Skip email sending if SMTP is not configured
     if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
-      console.log('SMTP not configured. Email content:')
+      console.log('⚠️ SMTP not configured. Skipping email send.')
+      console.log('Email content would have been:')
       console.log('To:', options.to)
       console.log('Subject:', options.subject)
       console.log('Content:', options.text || options.html)
-      return true // Return success in dev mode
+      return true // Return success to avoid blocking user flows
     }
+
+    console.log('✅ SMTP configured, attempting to send...')
 
     const info = await transporter.sendMail({
       from: `"${process.env.EMAIL_FROM_NAME || 'ebe'}" <${process.env.EMAIL_FROM_ADDRESS || process.env.SMTP_USER}>`,
@@ -38,10 +52,17 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
       html: options.html,
     })
 
-    console.log('Email sent:', info.messageId)
+    console.log('✅ Email sent successfully!')
+    console.log('Message ID:', info.messageId)
+    console.log('Response:', info.response)
     return true
   } catch (error) {
-    console.error('Error sending email:', error)
+    console.error('❌ [EMAIL SERVICE] Error sending email:', error)
+    if (error instanceof Error) {
+      console.error('Error name:', error.name)
+      console.error('Error message:', error.message)
+      console.error('Error stack:', error.stack)
+    }
     return false
   }
 }
