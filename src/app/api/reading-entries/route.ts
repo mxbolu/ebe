@@ -243,7 +243,7 @@ export async function POST(request: NextRequest) {
 
     // Log activity based on initial status
     const bookTitle = book.title
-    const bookAuthor = book.author || (book as any).authors?.[0] || 'Unknown Author'
+    const bookAuthor = book.authors?.[0] || 'Unknown Author'
 
     if (data.status === 'CURRENTLY_READING') {
       await logStartedBook(user.userId, data.bookId, bookTitle, bookAuthor)

@@ -224,7 +224,7 @@ export async function PATCH(
 
     if (statusChanged) {
       const bookTitle = existingEntry.book.title
-      const bookAuthor = existingEntry.book.author || (existingEntry.book as any).authors?.[0] || 'Unknown Author'
+      const bookAuthor = existingEntry.book.authors?.[0] || 'Unknown Author'
 
       if (data.status === 'CURRENTLY_READING') {
         await logStartedBook(user.userId, existingEntry.bookId, bookTitle, bookAuthor)
@@ -246,7 +246,7 @@ export async function PATCH(
 
     if (reviewAdded) {
       const bookTitle = existingEntry.book.title
-      const bookAuthor = existingEntry.book.author || (existingEntry.book as any).authors?.[0] || 'Unknown Author'
+      const bookAuthor = existingEntry.book.authors?.[0] || 'Unknown Author'
 
       await logReviewedBook(
         user.userId,
