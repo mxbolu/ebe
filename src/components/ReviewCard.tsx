@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Link from 'next/link'
 import ThreadedCommentSection from './ThreadedCommentSection'
 
 interface ReviewCardProps {
@@ -72,23 +73,28 @@ export default function ReviewCard({ review, currentUserId, onHelpfulClick, show
       {/* User Info */}
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-3">
-          {review.user.avatar ? (
-            <img
-              src={review.user.avatar}
-              alt={review.user.name || review.user.username}
-              className="w-10 h-10 rounded-full object-cover"
-            />
-          ) : (
-            <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
-              <span className="text-indigo-600 font-bold text-sm">
-                {(review.user.name || review.user.username).charAt(0).toUpperCase()}
-              </span>
-            </div>
-          )}
+          <Link href={`/users/${review.user.username}`} className="flex-shrink-0">
+            {review.user.avatar ? (
+              <img
+                src={review.user.avatar}
+                alt={review.user.name || review.user.username}
+                className="w-10 h-10 rounded-full object-cover hover:opacity-80 transition"
+              />
+            ) : (
+              <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center hover:bg-indigo-200 transition">
+                <span className="text-indigo-600 font-bold text-sm">
+                  {(review.user.name || review.user.username).charAt(0).toUpperCase()}
+                </span>
+              </div>
+            )}
+          </Link>
           <div>
-            <p className="font-medium text-gray-900">
+            <Link
+              href={`/users/${review.user.username}`}
+              className="font-medium text-gray-900 hover:text-indigo-600 transition"
+            >
               {review.user.name || review.user.username}
-            </p>
+            </Link>
             <p className="text-xs text-gray-500">
               {new Date(review.createdAt).toLocaleDateString('en-US', {
                 year: 'numeric',
