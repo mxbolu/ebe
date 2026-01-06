@@ -110,6 +110,7 @@ model User {
   clubDiscussions   BookClubDiscussion[]
   clubBooksAdded    BookClubBook[]
   notifications     Notification[]
+  searchHistory     SearchHistory[]
 
   @@index([email])
   @@index([username])
@@ -832,4 +833,21 @@ model ReadingSession {
   @@index([userId])
   @@index([bookId])
   @@index([startTime])
+}
+
+model SearchHistory {
+  id                String    @id @default(cuid())
+  userId            String
+  query             String    // The search query text
+  filters           String?   @db.Text // JSON string with filters (genre, year, rating, sortBy)
+  resultCount       Int       @default(0) // Number of results returned
+
+  createdAt         DateTime  @default(now())
+
+  // Relations
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+  @@index([userId, createdAt]) // Composite for fetching user's recent searches
 }

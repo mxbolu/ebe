@@ -29,6 +29,14 @@ function SearchPageContent() {
   const [page, setPage] = useState(1)
   const [user, setUser] = useState<any>(null)
   const [genres, setGenres] = useState<Array<{ name: string; count: number }>>([])
+  const [searchHistory, setSearchHistory] = useState<Array<{
+    id: string
+    query: string
+    filters: any
+    resultCount: number
+    createdAt: string
+  }>>([])
+  const [showHistory, setShowHistory] = useState(false)
   const [filters, setFilters] = useState({
     genre: '',
     minYear: '',
@@ -62,8 +70,21 @@ function SearchPageContent() {
       }
     }
 
+    const fetchSearchHistory = async () => {
+      try {
+        const response = await fetch('/api/search-history?limit=10')
+        if (response.ok) {
+          const data = await response.json()
+          setSearchHistory(data.searches)
+        }
+      } catch (error) {
+        console.error('Fetch search history failed:', error)
+      }
+    }
+
     checkAuth()
     fetchGenres()
+    fetchSearchHistory()
   }, [])
 
   const handleLogout = async () => {
@@ -98,6 +119,36 @@ function SearchPageContent() {
         const data = await response.json()
         if (resetResults) {
           setBooks(data.results)
+
+          // Save to search history (only for new searches, not pagination)
+          if (user && pageNum === 1) {
+            try {
+              await fetch('/api/search-history', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  query: searchQuery,
+                  filters: {
+                    genre: filters.genre || undefined,
+                    minYear: filters.minYear || undefined,
+                    maxYear: filters.maxYear || undefined,
+                    minRating: filters.minRating || undefined,
+                    sortBy: filters.sortBy,
+                  },
+                  resultCount: data.results.length,
+                }),
+              })
+
+              // Refresh search history
+              const historyResponse = await fetch('/api/search-history?limit=10')
+              if (historyResponse.ok) {
+                const historyData = await historyResponse.json()
+                setSearchHistory(historyData.searches)
+              }
+            } catch (error) {
+              console.error('Failed to save search history:', error)
+            }
+          }
         } else {
           setBooks((prev) => [...prev, ...data.results])
         }
@@ -109,7 +160,7 @@ function SearchPageContent() {
     } finally {
       setLoading(false)
     }
-  }, [filters])
+  }, [filters, user])
 
   useEffect(() => {
     const initialQuery = searchParams.get('q')
@@ -118,6 +169,19 @@ function SearchPageContent() {
       fetchBooks(initialQuery, 1, true)
     }
   }, [searchParams, fetchBooks])
+
+  // Close search history dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement
+      if (showHistory && !target.closest('.search-history-container')) {
+        setShowHistory(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [showHistory])
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
@@ -133,6 +197,24 @@ function SearchPageContent() {
     }
   }
 
+  const applyHistoricalSearch = (search: typeof searchHistory[0]) => {
+    setQuery(search.query)
+    if (search.filters) {
+      setFilters({
+        genre: search.filters.genre || '',
+        minYear: search.filters.minYear || '',
+        maxYear: search.filters.maxYear || '',
+        minRating: search.filters.minRating || '',
+        sortBy: search.filters.sortBy || 'relevance',
+      })
+    }
+    setShowHistory(false)
+    // Trigger search after state updates
+    setTimeout(() => {
+      router.push(`/search?q=${encodeURIComponent(search.query)}`)
+    }, 100)
+  }
+
   return (
     <>
       <MainNav user={user} onLogout={handleLogout} />
@@ -145,14 +227,63 @@ function SearchPageContent() {
 
           {/* Search Form */}
           <form onSubmit={handleSearch} className="mb-6">
-            <div className="flex gap-3">
-              <input
-                type="text"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search by title, author, or ISBN..."
-                className="flex-1 px-6 py-4 border-2 border-white/30 bg-white/20 backdrop-blur-sm rounded-xl focus:ring-4 focus:ring-white/50 focus:border-white text-white placeholder-white/70 outline-none text-lg font-medium"
-              />
+            <div className="flex gap-3 relative">
+              <div className="flex-1 relative search-history-container">
+                <input
+                  type="text"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  onFocus={() => setShowHistory(true)}
+                  placeholder="Search by title, author, or ISBN..."
+                  className="w-full px-6 py-4 border-2 border-white/30 bg-white/20 backdrop-blur-sm rounded-xl focus:ring-4 focus:ring-white/50 focus:border-white text-white placeholder-white/70 outline-none text-lg font-medium"
+                />
+
+                {/* Search History Dropdown */}
+                {showHistory && searchHistory.length > 0 && user && (
+                  <div className="absolute top-full left-0 right-0 mt-2 bg-white/95 backdrop-blur-md rounded-xl shadow-2xl border-2 border-white/50 overflow-hidden z-50 max-h-80 overflow-y-auto">
+                    <div className="p-3 bg-gradient-to-r from-teal-500 to-cyan-500 flex items-center justify-between">
+                      <span className="text-white font-bold text-sm">Recent Searches</span>
+                      <button
+                        type="button"
+                        onClick={() => setShowHistory(false)}
+                        className="text-white/80 hover:text-white text-sm font-medium"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                    <div className="divide-y divide-gray-100">
+                      {searchHistory.map((search) => (
+                        <button
+                          key={search.id}
+                          type="button"
+                          onClick={() => applyHistoricalSearch(search)}
+                          className="w-full text-left px-4 py-3 hover:bg-teal-50 transition-colors group"
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex-1">
+                              <div className="text-gray-900 font-medium group-hover:text-teal-600">
+                                {search.query}
+                              </div>
+                              {search.filters && Object.values(search.filters).some(v => v) && (
+                                <div className="text-xs text-gray-500 mt-1">
+                                  {search.filters.genre && `Genre: ${search.filters.genre} • `}
+                                  {search.filters.minYear && `Year: ${search.filters.minYear}+ • `}
+                                  {search.filters.minRating && `Rating: ${search.filters.minRating}+ • `}
+                                  Sort: {search.filters.sortBy || 'relevance'}
+                                </div>
+                              )}
+                            </div>
+                            <div className="text-xs text-gray-400 ml-3">
+                              {search.resultCount} results
+                            </div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <button
                 type="submit"
                 disabled={loading}
