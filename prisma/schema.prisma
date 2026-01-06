@@ -112,6 +112,7 @@ model User {
   notifications     Notification[]
   searchHistory     SearchHistory[]
   createdMeetings   BookClubMeeting[] @relation("CreatedMeetings")
+  meetingWaitingRoom MeetingWaitingParticipant[] @relation("MeetingWaitingRoom")
 
   @@index([email])
   @@index([username])
@@ -680,6 +681,7 @@ model BookClubMeeting {
   agoraAppId        String?   // Store app ID for reference
   recordingUrl      String?   // Recording URL if available
   status            String    @default("scheduled") // scheduled, in_progress, completed, cancelled
+  waitingRoomEnabled Boolean  @default(true) // Enable waiting room for this meeting
   createdById       String
 
   createdAt         DateTime  @default(now())
@@ -688,9 +690,27 @@ model BookClubMeeting {
   // Relations
   bookClub          BookClub  @relation(fields: [bookClubId], references: [id], onDelete: Cascade)
   createdBy         User      @relation("CreatedMeetings", fields: [createdById], references: [id])
+  waitingParticipants MeetingWaitingParticipant[]
 
   @@index([bookClubId])
   @@index([scheduledAt])
+  @@index([status])
+}
+
+model MeetingWaitingParticipant {
+  id          String   @id @default(cuid())
+  meetingId   String
+  userId      String
+  status      String   @default("waiting") // waiting, admitted, rejected
+  joinedAt    DateTime @default(now())
+
+  // Relations
+  meeting     BookClubMeeting @relation(fields: [meetingId], references: [id], onDelete: Cascade)
+  user        User            @relation("MeetingWaitingRoom", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([meetingId, userId])
+  @@index([meetingId])
+  @@index([userId])
   @@index([status])
 }
 

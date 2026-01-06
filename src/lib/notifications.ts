@@ -11,6 +11,9 @@ export type NotificationType =
   | 'badge_earned'
   | 'challenge_completed'
   | 'goal_achieved'
+  | 'meeting_scheduled'
+  | 'meeting_starting'
+  | 'meeting_cancelled'
 
 interface NotificationData {
   userId?: string
@@ -146,4 +149,69 @@ export async function notifyGoalAchieved(
     { year, targetBooks },
     '/dashboard'
   )
+}
+
+export async function notifyMeetingScheduled(
+  userIds: string[],
+  bookClubName: string,
+  meetingTitle: string,
+  meetingDate: Date,
+  bookClubId: string,
+  meetingId: string
+): Promise<void> {
+  const dateStr = meetingDate.toLocaleDateString('en-US', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+
+  for (const userId of userIds) {
+    await createNotification(
+      userId,
+      'meeting_scheduled',
+      'New Meeting Scheduled',
+      `"${meetingTitle}" in ${bookClubName} on ${dateStr}`,
+      { bookClubId, meetingId, bookClubName, meetingTitle },
+      `/clubs/${bookClubId}`
+    )
+  }
+}
+
+export async function notifyMeetingStarting(
+  userIds: string[],
+  bookClubName: string,
+  meetingTitle: string,
+  bookClubId: string,
+  meetingId: string
+): Promise<void> {
+  for (const userId of userIds) {
+    await createNotification(
+      userId,
+      'meeting_starting',
+      'Meeting Starting Soon',
+      `"${meetingTitle}" in ${bookClubName} is starting in 15 minutes`,
+      { bookClubId, meetingId, bookClubName, meetingTitle },
+      `/clubs/${bookClubId}`
+    )
+  }
+}
+
+export async function notifyMeetingCancelled(
+  userIds: string[],
+  bookClubName: string,
+  meetingTitle: string,
+  bookClubId: string
+): Promise<void> {
+  for (const userId of userIds) {
+    await createNotification(
+      userId,
+      'meeting_cancelled',
+      'Meeting Cancelled',
+      `"${meetingTitle}" in ${bookClubName} has been cancelled`,
+      { bookClubId, bookClubName, meetingTitle },
+      `/clubs/${bookClubId}`
+    )
+  }
 }

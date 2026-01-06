@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import ScheduleMeetingModal from '@/components/ScheduleMeetingModal'
 import VideoRoom from '@/components/VideoRoom'
+import WaitingRoom from '@/components/WaitingRoom'
+import WaitingRoomPanel from '@/components/WaitingRoomPanel'
 
 export default function BookClubPage() {
   const router = useRouter()
@@ -21,6 +23,8 @@ export default function BookClubPage() {
   const [activeTab, setActiveTab] = useState<'discussions' | 'books' | 'members' | 'meetings'>('discussions')
   const [showScheduleModal, setShowScheduleModal] = useState(false)
   const [activeMeeting, setActiveMeeting] = useState<any>(null)
+  const [waitingRoomState, setWaitingRoomState] = useState<'none' | 'waiting' | 'admitted' | 'rejected'>('none')
+  const [selectedMeeting, setSelectedMeeting] = useState<any>(null)
 
   useEffect(() => {
     if (id) {
@@ -76,9 +80,20 @@ export default function BookClubPage() {
     }
   }
 
-  const handleJoinMeeting = async (meetingId: string) => {
+  const handleJoinMeeting = async (meeting: any) => {
     try {
-      const response = await fetch(`/api/book-clubs/${id}/meetings/${meetingId}/join`, {
+      // First check if waiting room is enabled and user needs to wait
+      const isAdminOrMod = userMembership?.role === 'admin' || userMembership?.role === 'moderator'
+
+      if (meeting.waitingRoomEnabled && !isAdminOrMod) {
+        // Show waiting room
+        setSelectedMeeting(meeting)
+        setWaitingRoomState('waiting')
+        return
+      }
+
+      // If no waiting room or user is admin/mod, join directly
+      const response = await fetch(`/api/book-clubs/${id}/meetings/${meeting.id}/join`, {
         method: 'POST',
       })
 
@@ -89,12 +104,45 @@ export default function BookClubPage() {
 
       const data = await response.json()
       setActiveMeeting({
-        meetingId,
+        meetingId: meeting.id,
         ...data,
       })
     } catch (err: any) {
       alert(err.message)
     }
+  }
+
+  const handleWaitingRoomAdmitted = async () => {
+    if (!selectedMeeting) return
+
+    try {
+      const response = await fetch(`/api/book-clubs/${id}/meetings/${selectedMeeting.id}/join`, {
+        method: 'POST',
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || 'Failed to join meeting')
+      }
+
+      const data = await response.json()
+      setActiveMeeting({
+        meetingId: selectedMeeting.id,
+        ...data,
+      })
+      setWaitingRoomState('none')
+      setSelectedMeeting(null)
+    } catch (err: any) {
+      alert(err.message)
+      setWaitingRoomState('none')
+      setSelectedMeeting(null)
+    }
+  }
+
+  const handleWaitingRoomRejected = () => {
+    alert('You were not admitted to the meeting.')
+    setWaitingRoomState('none')
+    setSelectedMeeting(null)
   }
 
   const handleLeaveMeeting = () => {
@@ -557,7 +605,7 @@ export default function BookClubPage() {
                             </div>
                             {isMember && !isPast && (
                               <button
-                                onClick={() => handleJoinMeeting(meeting.id)}
+                                onClick={() => handleJoinMeeting(meeting)}
                                 className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg transition whitespace-nowrap"
                               >
                                 🎥 Join
@@ -583,6 +631,20 @@ export default function BookClubPage() {
         onScheduled={fetchMeetings}
       />
 
+      {/* Waiting Room */}
+      {waitingRoomState === 'waiting' && selectedMeeting && (
+        <div className="fixed inset-0 z-50">
+          <WaitingRoom
+            bookClubId={id}
+            meetingId={selectedMeeting.id}
+            meetingTitle={selectedMeeting.title}
+            onAdmitted={handleWaitingRoomAdmitted}
+            onRejected={handleWaitingRoomRejected}
+          />
+        </div>
+      )}
+
+      {/* Video Room */}
       {activeMeeting && (
         <div className="fixed inset-0 z-50 bg-black">
           <VideoRoom
@@ -590,8 +652,15 @@ export default function BookClubPage() {
             channelName={activeMeeting.channelName}
             token={activeMeeting.token}
             uid={activeMeeting.uid}
+            bookClubId={id}
+            meetingId={activeMeeting.meetingId}
+            isAdminOrModerator={userMembership?.role === 'admin' || userMembership?.role === 'moderator'}
             onLeave={handleLeaveMeeting}
           />
+          {/* Waiting Room Panel for Admins/Moderators */}
+          {(userMembership?.role === 'admin' || userMembership?.role === 'moderator') && (
+            <WaitingRoomPanel bookClubId={id} meetingId={activeMeeting.meetingId} />
+          )}
         </div>
       )}
     </div>

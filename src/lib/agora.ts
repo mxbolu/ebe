@@ -56,3 +56,30 @@ export function generateChannelName(bookClubId: string, meetingId: string): stri
 export function getAgoraAppId(): string {
   return AGORA_APP_ID
 }
+
+/**
+ * Get Agora credentials for server-side operations
+ * @returns Object with App ID and Certificate
+ */
+export function getAgoraCredentials() {
+  return {
+    appId: AGORA_APP_ID,
+    appCertificate: AGORA_APP_CERTIFICATE,
+  }
+}
+
+/**
+ * Generate RESTful API authentication for Agora Cloud Recording
+ * @returns Basic auth string
+ */
+export function getAgoraRESTAuth(): string {
+  const customerKey = process.env.AGORA_CUSTOMER_KEY || ''
+  const customerSecret = process.env.AGORA_CUSTOMER_SECRET || ''
+
+  if (!customerKey || !customerSecret) {
+    throw new Error('Agora REST API credentials not configured')
+  }
+
+  const credentials = Buffer.from(`${customerKey}:${customerSecret}`).toString('base64')
+  return `Basic ${credentials}`
+}
