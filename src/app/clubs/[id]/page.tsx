@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter, useParams } from 'next/navigation'
+import ScheduleMeetingModal from '@/components/ScheduleMeetingModal'
+import VideoRoom from '@/components/VideoRoom'
 
 export default function BookClubPage() {
   const router = useRouter()
@@ -11,16 +13,20 @@ export default function BookClubPage() {
   const [club, setClub] = useState<any>(null)
   const [userMembership, setUserMembership] = useState<any>(null)
   const [discussions, setDiscussions] = useState<any[]>([])
+  const [meetings, setMeetings] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [newMessage, setNewMessage] = useState('')
   const [posting, setPosting] = useState(false)
-  const [activeTab, setActiveTab] = useState<'discussions' | 'books' | 'members'>('discussions')
+  const [activeTab, setActiveTab] = useState<'discussions' | 'books' | 'members' | 'meetings'>('discussions')
+  const [showScheduleModal, setShowScheduleModal] = useState(false)
+  const [activeMeeting, setActiveMeeting] = useState<any>(null)
 
   useEffect(() => {
     if (id) {
       fetchClub()
       fetchDiscussions()
+      fetchMeetings()
     }
   }, [id])
 
@@ -55,6 +61,45 @@ export default function BookClubPage() {
     } catch (err) {
       console.error('Failed to fetch discussions:', err)
     }
+  }
+
+  const fetchMeetings = async () => {
+    try {
+      const response = await fetch(`/api/book-clubs/${id}/meetings`)
+
+      if (!response.ok) return
+
+      const data = await response.json()
+      setMeetings(data.meetings || [])
+    } catch (err) {
+      console.error('Failed to fetch meetings:', err)
+    }
+  }
+
+  const handleJoinMeeting = async (meetingId: string) => {
+    try {
+      const response = await fetch(`/api/book-clubs/${id}/meetings/${meetingId}/join`, {
+        method: 'POST',
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || 'Failed to join meeting')
+      }
+
+      const data = await response.json()
+      setActiveMeeting({
+        meetingId,
+        ...data,
+      })
+    } catch (err: any) {
+      alert(err.message)
+    }
+  }
+
+  const handleLeaveMeeting = () => {
+    setActiveMeeting(null)
+    fetchMeetings()
   }
 
   const handlePostDiscussion = async (e: React.FormEvent) => {
@@ -308,6 +353,16 @@ export default function BookClubPage() {
               >
                 Members ({club._count.members})
               </button>
+              <button
+                onClick={() => setActiveTab('meetings')}
+                className={`flex-1 py-4 px-6 font-medium transition ${
+                  activeTab === 'meetings'
+                    ? 'border-b-2 border-indigo-600 text-indigo-600'
+                    : 'text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                Meetings
+              </button>
             </div>
           </div>
 
@@ -435,9 +490,110 @@ export default function BookClubPage() {
                 </div>
               </div>
             )}
+
+            {/* Meetings Tab */}
+            {activeTab === 'meetings' && (
+              <div>
+                {isMember && (userMembership.role === 'admin' || userMembership.role === 'moderator') && (
+                  <div className="mb-6">
+                    <button
+                      onClick={() => setShowScheduleModal(true)}
+                      className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-6 rounded-lg transition"
+                    >
+                      📅 Schedule Meeting
+                    </button>
+                  </div>
+                )}
+
+                <div className="space-y-4">
+                  {meetings.length === 0 ? (
+                    <div className="text-center py-12 text-gray-500">
+                      <p>No meetings scheduled yet.</p>
+                    </div>
+                  ) : (
+                    meetings.map((meeting) => {
+                      const meetingDate = new Date(meeting.scheduledAt)
+                      const isPast = meetingDate < new Date()
+                      const isToday = meetingDate.toDateString() === new Date().toDateString()
+                      const isSoon = !isPast && meetingDate.getTime() - Date.now() < 3600000 // Within 1 hour
+
+                      return (
+                        <div key={meeting.id} className="border border-gray-200 rounded-lg p-4">
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-2">
+                                <h3 className="text-lg font-bold text-gray-900">{meeting.title}</h3>
+                                {isSoon && (
+                                  <span className="bg-green-100 text-green-700 text-xs px-2 py-1 rounded font-medium">
+                                    Starting Soon
+                                  </span>
+                                )}
+                                {isPast && (
+                                  <span className="bg-gray-100 text-gray-600 text-xs px-2 py-1 rounded">
+                                    Ended
+                                  </span>
+                                )}
+                              </div>
+                              {meeting.description && (
+                                <p className="text-gray-600 mb-3">{meeting.description}</p>
+                              )}
+                              <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600">
+                                <div className="flex items-center gap-1">
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                  </svg>
+                                  <span>{meetingDate.toLocaleDateString()}</span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                  </svg>
+                                  <span>{meetingDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <span>{meeting.duration} minutes</span>
+                                </div>
+                              </div>
+                            </div>
+                            {isMember && !isPast && (
+                              <button
+                                onClick={() => handleJoinMeeting(meeting.id)}
+                                className="bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-lg transition whitespace-nowrap"
+                              >
+                                🎥 Join
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      )
+                    })
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
+
+      {/* Modals */}
+      <ScheduleMeetingModal
+        isOpen={showScheduleModal}
+        onClose={() => setShowScheduleModal(false)}
+        bookClubId={id}
+        onScheduled={fetchMeetings}
+      />
+
+      {activeMeeting && (
+        <div className="fixed inset-0 z-50 bg-black">
+          <VideoRoom
+            appId={activeMeeting.appId}
+            channelName={activeMeeting.channelName}
+            token={activeMeeting.token}
+            uid={activeMeeting.uid}
+            onLeave={handleLeaveMeeting}
+          />
+        </div>
+      )}
     </div>
   )
 }

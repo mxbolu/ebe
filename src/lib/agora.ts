@@ -15,7 +15,7 @@ const AGORA_APP_CERTIFICATE = process.env.AGORA_APP_CERTIFICATE || ''
 export function generateAgoraToken(
   channelName: string,
   uid: number = 0,
-  role: RtcRole = RtcRole.PUBLISHER,
+  role: number = RtcRole.PUBLISHER,
   expirationTimeInSeconds: number = 3600
 ): string {
   if (!AGORA_APP_ID || !AGORA_APP_CERTIFICATE) {
