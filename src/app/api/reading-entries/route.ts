@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
 import prisma from '@/lib/prisma'
 import { authenticateRequest } from '@/lib/auth/middleware'
+import { logFinishedBook, logStartedBook, logReviewedBook } from '@/lib/activity'
 
 /**
  * Helper function to update a book's average rating and total ratings
@@ -236,6 +237,28 @@ export async function POST(request: NextRequest) {
     // Recalculate book's average rating if a rating was added
     if (data.rating !== undefined && data.status === 'FINISHED') {
       await updateBookAverageRating(data.bookId)
+    }
+
+    // Log activity based on initial status
+    const bookTitle = book.title
+    const bookAuthor = book.author || (book as any).authors?.[0] || 'Unknown Author'
+
+    if (data.status === 'CURRENTLY_READING') {
+      await logStartedBook(user.userId, data.bookId, bookTitle, bookAuthor)
+    } else if (data.status === 'FINISHED') {
+      await logFinishedBook(user.userId, data.bookId, bookTitle, bookAuthor)
+
+      // Also log review activity if review/rating was added and entry is not private
+      if ((data.rating || data.review) && !entry.isPrivate) {
+        await logReviewedBook(
+          user.userId,
+          data.bookId,
+          bookTitle,
+          bookAuthor,
+          data.rating,
+          data.review
+        )
+      }
     }
 
     return NextResponse.json({ entry }, { status: 201 })

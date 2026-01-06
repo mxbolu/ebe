@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import { authenticateRequest } from '@/lib/auth/middleware'
+import { logFollowedUser } from '@/lib/activity'
 
 /**
  * POST /api/users/[username]/follow
@@ -20,7 +21,7 @@ export async function POST(
     // Find user to follow
     const userToFollow = await prisma.user.findUnique({
       where: { username },
-      select: { id: true },
+      select: { id: true, username: true, name: true },
     })
 
     if (!userToFollow) {
@@ -57,6 +58,14 @@ export async function POST(
         followingId: userToFollow.id,
       },
     })
+
+    // Log follow activity
+    await logFollowedUser(
+      user.userId,
+      userToFollow.id,
+      userToFollow.username,
+      userToFollow.name
+    )
 
     console.log(`[Follow] User ${user.userId} followed ${userToFollow.id}`)
     return NextResponse.json({ success: true }, { status: 201 })

@@ -3,6 +3,7 @@ import { z } from 'zod'
 import prisma from '@/lib/prisma'
 import { authenticateRequest } from '@/lib/auth/middleware'
 import { checkAllBadges, updateReadingStreak } from '@/lib/badges'
+import { logFinishedBook, logStartedBook, logReviewedBook } from '@/lib/activity'
 
 /**
  * Helper function to update a book's average rating and total ratings
@@ -254,6 +255,39 @@ export async function PATCH(
         updateReadingStreak(user.userId),
         checkAllBadges(user.userId),
       ])
+    }
+
+    // Log activity based on status changes
+    const statusChanged = data.status !== undefined && data.status !== existingEntry.status
+
+    if (statusChanged) {
+      const bookTitle = existingEntry.book.title
+      const bookAuthor = existingEntry.book.author || (existingEntry.book as any).authors?.[0] || 'Unknown Author'
+
+      if (data.status === 'CURRENTLY_READING') {
+        await logStartedBook(user.userId, existingEntry.bookId, bookTitle, bookAuthor)
+      } else if (data.status === 'FINISHED') {
+        await logFinishedBook(user.userId, existingEntry.bookId, bookTitle, bookAuthor)
+      }
+    }
+
+    // Log review activity if review or rating was added/updated
+    const reviewAdded = (data.review !== undefined || data.rating !== undefined) &&
+                       finalStatus === 'FINISHED' &&
+                       !entry.isPrivate
+
+    if (reviewAdded) {
+      const bookTitle = existingEntry.book.title
+      const bookAuthor = existingEntry.book.author || (existingEntry.book as any).authors?.[0] || 'Unknown Author'
+
+      await logReviewedBook(
+        user.userId,
+        existingEntry.bookId,
+        bookTitle,
+        bookAuthor,
+        entry.rating || undefined,
+        entry.review || undefined
+      )
     }
 
     return NextResponse.json({ entry }, { status: 200 })
