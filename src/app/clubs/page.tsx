@@ -58,13 +58,29 @@ export default function BookClubsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 py-6">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Book Clubs</h1>
-              <p className="text-gray-600 mt-1">Join or create book clubs with fellow readers</p>
+      {/* Top Navigation Bar */}
+      <header className="bg-white border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center gap-6">
+              <button
+                onClick={() => router.push('/dashboard')}
+                className="flex items-center gap-2 hover:opacity-80 transition"
+              >
+                <h1 className="text-2xl font-bold text-indigo-600">ebe</h1>
+                <span className="text-sm text-gray-500">Reading Journal</span>
+              </button>
+              <nav className="flex space-x-6">
+                <button
+                  onClick={() => router.push('/dashboard')}
+                  className="text-sm text-gray-600 hover:text-gray-900 font-medium"
+                >
+                  My Books
+                </button>
+                <span className="text-sm text-indigo-600 font-medium border-b-2 border-indigo-600 pb-1">
+                  Book Clubs
+                </span>
+              </nav>
             </div>
             {user && (
               <button
@@ -77,6 +93,16 @@ export default function BookClubsPage() {
                 Create Club
               </button>
             )}
+          </div>
+        </div>
+      </header>
+
+      {/* Page Header */}
+      <div className="bg-white border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 py-6">
+          <div className="mb-4">
+            <h1 className="text-3xl font-bold text-gray-900">Book Clubs</h1>
+            <p className="text-gray-600 mt-1">Join or create book clubs with fellow readers</p>
           </div>
 
           {/* Search Bar */}

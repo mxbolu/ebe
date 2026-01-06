@@ -153,6 +153,37 @@ export default function BookClubPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Top Navigation Bar */}
+      <header className="bg-white border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center gap-6">
+              <button
+                onClick={() => router.push('/dashboard')}
+                className="flex items-center gap-2 hover:opacity-80 transition"
+              >
+                <h1 className="text-2xl font-bold text-indigo-600">ebe</h1>
+                <span className="text-sm text-gray-500">Reading Journal</span>
+              </button>
+              <nav className="flex space-x-6">
+                <button
+                  onClick={() => router.push('/dashboard')}
+                  className="text-sm text-gray-600 hover:text-gray-900 font-medium"
+                >
+                  My Books
+                </button>
+                <button
+                  onClick={() => router.push('/clubs')}
+                  className="text-sm text-indigo-600 hover:text-indigo-700 font-medium"
+                >
+                  Book Clubs
+                </button>
+              </nav>
+            </div>
+          </div>
+        </div>
+      </header>
+
       {/* Header with Cover */}
       <div className="bg-white border-b border-gray-200">
         {club.coverImage ? (
