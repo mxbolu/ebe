@@ -104,6 +104,10 @@ model User {
   userChallenges    UserChallenge[]
   readingStreak     ReadingStreak?
   reviewHelpfuls    ReviewHelpful[]
+  createdBookClubs  BookClub[]       @relation("CreatedBookClubs")
+  bookClubMemberships BookClubMember[]
+  clubDiscussions   BookClubDiscussion[]
+  clubBooksAdded    BookClubBook[]
 
   @@index([email])
   @@index([username])
@@ -179,6 +183,7 @@ model Book {
   highlights          Highlight[]
   quotes              Quote[]
   readingSessions     ReadingSession[]
+  bookClubBooks       BookClubBook[]
 
   @@index([title])
   @@index([authors])
@@ -528,6 +533,91 @@ model Activity {
   @@index([userId])
   @@index([createdAt])
   @@index([type])
+}
+
+model BookClub {
+  id                String    @id @default(cuid())
+  name              String
+  description       String?   @db.Text
+  isPublic          Boolean   @default(true)  // Public or private club
+  coverImage        String?   // Optional club cover image URL
+  maxMembers        Int?      // Optional member limit
+  createdById       String
+
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  // Relations
+  createdBy         User      @relation("CreatedBookClubs", fields: [createdById], references: [id], onDelete: Cascade)
+  members           BookClubMember[]
+  currentRead       BookClubBook?    @relation("CurrentRead")
+  books             BookClubBook[]
+  discussions       BookClubDiscussion[]
+
+  @@index([createdById])
+  @@index([isPublic])
+  @@index([createdAt])
+}
+
+model BookClubMember {
+  id                String    @id @default(cuid())
+  bookClubId        String
+  userId            String
+  role              String    @default("member")  // "admin", "moderator", "member"
+  joinedAt          DateTime  @default(now())
+
+  // Relations
+  bookClub          BookClub  @relation(fields: [bookClubId], references: [id], onDelete: Cascade)
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([bookClubId, userId])  // Can't join same club twice
+  @@index([bookClubId])
+  @@index([userId])
+}
+
+model BookClubBook {
+  id                String    @id @default(cuid())
+  bookClubId        String
+  bookId            String
+  status            String    @default("upcoming")  // "upcoming", "current", "completed"
+  startDate         DateTime?
+  endDate           DateTime?
+  addedById         String
+
+  createdAt         DateTime  @default(now())
+
+  // Relations
+  bookClub          BookClub  @relation(fields: [bookClubId], references: [id], onDelete: Cascade)
+  currentReadClub   BookClub? @relation("CurrentRead", fields: [currentReadClubId], references: [id])
+  currentReadClubId String?   @unique
+  book              Book      @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  addedBy           User      @relation(fields: [addedById], references: [id])
+
+  @@index([bookClubId])
+  @@index([bookId])
+  @@index([status])
+}
+
+model BookClubDiscussion {
+  id                String    @id @default(cuid())
+  bookClubId        String
+  userId            String
+  message           String    @db.Text
+  replyToId         String?   // For threaded discussions
+
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  // Relations
+  bookClub          BookClub  @relation(fields: [bookClubId], references: [id], onDelete: Cascade)
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  replyTo           BookClubDiscussion? @relation("DiscussionReplies", fields: [replyToId], references: [id])
+  replies           BookClubDiscussion[] @relation("DiscussionReplies")
+
+  @@index([bookClubId])
+  @@index([userId])
+  @@index([createdAt])
+  @@index([replyToId])
 }
 
 // ============================================
