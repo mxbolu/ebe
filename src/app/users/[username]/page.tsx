@@ -416,7 +416,7 @@ export default function UserProfilePage() {
                     <h3 className="font-medium text-sm text-gray-900 line-clamp-2 group-hover:text-indigo-600 transition">
                       {entry.book.title}
                     </h3>
-                    <p className="text-xs text-gray-600">{entry.book.author}</p>
+                    <p className="text-xs text-gray-600">{entry.book.authors?.[0] || 'Unknown Author'}</p>
                   </Link>
                 ))}
               </div>
@@ -462,7 +462,7 @@ export default function UserProfilePage() {
                       <div className="flex-1">
                         <Link href={`/books/${review.book.id}`} className="hover:text-indigo-600">
                           <h3 className="font-bold text-gray-900 mb-1">{review.book.title}</h3>
-                          <p className="text-sm text-gray-600 mb-2">{review.book.author}</p>
+                          <p className="text-sm text-gray-600 mb-2">{review.book.authors?.[0] || 'Unknown Author'}</p>
                         </Link>
 
                         {review.rating && (
