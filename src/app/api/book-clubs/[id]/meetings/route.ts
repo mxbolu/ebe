@@ -4,6 +4,7 @@ import prisma from '@/lib/prisma'
 import { authenticateRequest } from '@/lib/auth/middleware'
 import { generateChannelName, getAgoraAppId } from '@/lib/agora'
 import { notifyMeetingScheduled } from '@/lib/notifications'
+import { sendMeetingScheduledEmail } from '@/lib/email/service'
 
 const createMeetingSchema = z.object({
   title: z.string().min(1).max(200),
@@ -145,19 +146,30 @@ export async function POST(
       data: { agoraChannelName: channelName },
     })
 
-    // Send notifications to all book club members (async, non-blocking)
+    // Send notifications and emails to all book club members (async, non-blocking)
     prisma.bookClub
       .findUnique({
         where: { id },
         include: {
           members: {
-            select: { userId: true },
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  email: true,
+                  name: true,
+                  username: true,
+                },
+              },
+            },
           },
         },
       })
       .then((bookClub) => {
         if (bookClub) {
           const memberIds = bookClub.members.map((m) => m.userId)
+
+          // Send in-app notifications
           notifyMeetingScheduled(
             memberIds,
             bookClub.name,
@@ -166,6 +178,20 @@ export async function POST(
             id,
             meeting.id
           ).catch((err) => console.error('Failed to send meeting notifications:', err))
+
+          // Send emails to all members
+          bookClub.members.forEach((member) => {
+            sendMeetingScheduledEmail(
+              member.user.email,
+              member.user.name || member.user.username,
+              data.title,
+              bookClub.name,
+              new Date(data.scheduledAt),
+              data.duration,
+              id,
+              meeting.id
+            ).catch((err) => console.error(`Failed to send email to ${member.user.email}:`, err))
+          })
         }
       })
       .catch((err) => console.error('Failed to fetch book club for notifications:', err))
