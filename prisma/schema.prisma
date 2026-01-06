@@ -109,6 +109,7 @@ model User {
   bookClubMemberships BookClubMember[]
   clubDiscussions   BookClubDiscussion[]
   clubBooksAdded    BookClubBook[]
+  notifications     Notification[]
 
   @@index([email])
   @@index([username])
@@ -557,6 +558,27 @@ model Activity {
   @@index([userId])
   @@index([createdAt])
   @@index([type])
+}
+
+model Notification {
+  id                String    @id @default(cuid())
+  userId            String
+  type              String    // "follow", "comment", "review_helpful", "badge_earned", "challenge_completed", "goal_achieved"
+  title             String
+  message           String    @db.Text
+  data              String?   @db.Text // JSON data with additional context (e.g., user ID, book ID, etc.)
+  isRead            Boolean   @default(false)
+  link              String?   // Optional link to related content
+
+  createdAt         DateTime  @default(now())
+
+  // Relations
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([isRead])
+  @@index([createdAt])
+  @@index([userId, isRead])
 }
 
 model BookClub {

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import { authenticateRequest } from '@/lib/auth/middleware'
 import { logFollowedUser } from '@/lib/activity'
+import { notifyNewFollower } from '@/lib/notifications'
 
 /**
  * POST /api/users/[username]/follow
@@ -59,13 +60,20 @@ export async function POST(
       },
     })
 
-    // Log follow activity
-    await logFollowedUser(
-      user.userId,
-      userToFollow.id,
-      userToFollow.username,
-      userToFollow.name
-    )
+    // Log follow activity and notify user
+    await Promise.all([
+      logFollowedUser(
+        user.userId,
+        userToFollow.id,
+        userToFollow.username,
+        userToFollow.name
+      ),
+      notifyNewFollower(
+        userToFollow.id,
+        user.username,
+        user.name
+      ),
+    ])
 
     console.log(`[Follow] User ${user.userId} followed ${userToFollow.id}`)
     return NextResponse.json({ success: true }, { status: 201 })

@@ -4,6 +4,8 @@ import prisma from '@/lib/prisma'
 import { authenticateRequest } from '@/lib/auth/middleware'
 import { checkAllBadges, updateReadingStreak } from '@/lib/badges'
 import { logFinishedBook, logStartedBook, logReviewedBook } from '@/lib/activity'
+import { updateChallengeProgress } from '@/lib/challenges'
+import { updateReadingGoal } from '@/lib/reading-goals'
 
 /**
  * Helper function to update a book's average rating and total ratings
@@ -268,6 +270,12 @@ export async function PATCH(
         await logStartedBook(user.userId, existingEntry.bookId, bookTitle, bookAuthor)
       } else if (data.status === 'FINISHED') {
         await logFinishedBook(user.userId, existingEntry.bookId, bookTitle, bookAuthor)
+
+        // Update challenge progress and reading goal
+        await Promise.all([
+          updateChallengeProgress(user.userId, existingEntry.bookId),
+          updateReadingGoal(user.userId),
+        ])
       }
     }
 

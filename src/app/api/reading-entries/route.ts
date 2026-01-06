@@ -3,6 +3,8 @@ import { z } from 'zod'
 import prisma from '@/lib/prisma'
 import { authenticateRequest } from '@/lib/auth/middleware'
 import { logFinishedBook, logStartedBook, logReviewedBook } from '@/lib/activity'
+import { updateChallengeProgress } from '@/lib/challenges'
+import { updateReadingGoal } from '@/lib/reading-goals'
 
 /**
  * Helper function to update a book's average rating and total ratings
@@ -247,6 +249,12 @@ export async function POST(request: NextRequest) {
       await logStartedBook(user.userId, data.bookId, bookTitle, bookAuthor)
     } else if (data.status === 'FINISHED') {
       await logFinishedBook(user.userId, data.bookId, bookTitle, bookAuthor)
+
+      // Update challenge progress and reading goal
+      await Promise.all([
+        updateChallengeProgress(user.userId, data.bookId),
+        updateReadingGoal(user.userId),
+      ])
 
       // Also log review activity if review/rating was added and entry is not private
       if ((data.rating || data.review) && !entry.isPrivate) {
