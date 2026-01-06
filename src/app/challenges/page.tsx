@@ -14,8 +14,8 @@ interface Challenge {
   iconUrl: string | null
   userChallenges?: {
     id: string
-    progress: number
-    completed: boolean
+    currentValue: number
+    isCompleted: boolean
     completedAt: string | null
   }[]
   _count: {
@@ -208,7 +208,7 @@ export default function ChallengesPage() {
                   <div className="bg-gradient-to-r from-indigo-500 to-purple-600 p-6 text-white">
                     <div className="flex items-start justify-between mb-2">
                       <div className="text-4xl">{getChallengeIcon(challenge.type)}</div>
-                      {userChallenge?.completed && (
+                      {userChallenge?.isCompleted && (
                         <div className="bg-green-500 text-white text-xs font-bold px-2 py-1 rounded">
                           ✓ Completed
                         </div>
@@ -237,14 +237,14 @@ export default function ChallengesPage() {
                         <div className="flex items-center justify-between mb-2">
                           <span className="text-sm font-medium text-gray-700">Your Progress</span>
                           <span className="text-sm text-gray-600">
-                            {userChallenge.progress} / {challenge.targetValue}
+                            {userChallenge.currentValue} / {challenge.targetValue}
                           </span>
                         </div>
                         <div className="w-full bg-gray-200 rounded-full h-2">
                           <div
                             className="bg-indigo-600 h-2 rounded-full transition-all duration-300"
                             style={{
-                              width: `${Math.min((userChallenge.progress / challenge.targetValue) * 100, 100)}%`,
+                              width: `${Math.min((userChallenge.currentValue / challenge.targetValue) * 100, 100)}%`,
                             }}
                           ></div>
                         </div>
@@ -282,7 +282,7 @@ export default function ChallengesPage() {
                     {user && (
                       <button
                         onClick={() => handleJoinLeave(challenge.id, isJoined)}
-                        disabled={!active || userChallenge?.completed}
+                        disabled={!active || userChallenge?.isCompleted}
                         className={`w-full font-medium py-2 px-4 rounded-lg transition ${
                           isJoined
                             ? 'bg-gray-100 hover:bg-gray-200 text-gray-700'
@@ -291,7 +291,7 @@ export default function ChallengesPage() {
                       >
                         {!active
                           ? 'Challenge Ended'
-                          : userChallenge?.completed
+                          : userChallenge?.isCompleted
                           ? 'Completed'
                           : isJoined
                           ? 'Leave Challenge'

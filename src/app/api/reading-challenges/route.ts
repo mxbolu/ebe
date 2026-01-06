@@ -22,8 +22,8 @@ export async function GET(request: NextRequest) {
               where: { userId: currentUserId },
               select: {
                 id: true,
-                progress: true,
-                completed: true,
+                currentValue: true,
+                isCompleted: true,
                 completedAt: true,
               },
             }
@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
         _count: {
           select: {
             userChallenges: {
-              where: { completed: true },
+              where: { isCompleted: true },
             },
           },
         },

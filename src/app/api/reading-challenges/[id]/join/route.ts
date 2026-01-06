@@ -58,7 +58,7 @@ export async function POST(
       data: {
         userId: user.userId,
         challengeId,
-        progress: 0,
+        currentValue: 0,
       },
     })
 
