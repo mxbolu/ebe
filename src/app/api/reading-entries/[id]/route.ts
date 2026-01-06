@@ -315,7 +315,7 @@ export async function DELETE(
 
     // Update reading goal if a finished book was deleted
     if (wasFinished && existingEntry.finishDate) {
-      await updateReadingGoal(user.userId, existingEntry.finishDate)
+      await updateReadingGoal(user.userId)
     }
 
     return NextResponse.json(
