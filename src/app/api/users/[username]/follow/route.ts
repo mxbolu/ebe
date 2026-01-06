@@ -19,6 +19,12 @@ export async function POST(
   const { username } = await params
 
   try {
+    // Find current user's name
+    const currentUser = await prisma.user.findUnique({
+      where: { id: user.userId },
+      select: { name: true },
+    })
+
     // Find user to follow
     const userToFollow = await prisma.user.findUnique({
       where: { username },
@@ -71,7 +77,7 @@ export async function POST(
       notifyNewFollower(
         userToFollow.id,
         user.username,
-        user.name
+        currentUser?.name || null
       ),
     ])
 
