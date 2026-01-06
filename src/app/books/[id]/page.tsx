@@ -48,6 +48,10 @@ export default function BookDetailPage() {
   const [error, setError] = useState('')
   const [showAddMenu, setShowAddMenu] = useState(false)
   const [adding, setAdding] = useState(false)
+  const [showReviewForm, setShowReviewForm] = useState(false)
+  const [rating, setRating] = useState(0)
+  const [reviewText, setReviewText] = useState('')
+  const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
     fetchBookDetails()
@@ -65,6 +69,12 @@ export default function BookDetailPage() {
       const data = await response.json()
       setBook(data.book)
       setReadingEntry(data.readingEntry || null)
+
+      // Initialize form with existing review data
+      if (data.readingEntry) {
+        setRating(data.readingEntry.rating || 0)
+        setReviewText(data.readingEntry.review || '')
+      }
     } catch (err: any) {
       setError(err.message)
     } finally {
@@ -112,6 +122,39 @@ export default function BookDetailPage() {
       toast.success('Book removed from your library')
     } catch (err: any) {
       toast.error(err.message)
+    }
+  }
+
+  const handleSubmitReview = async () => {
+    if (!readingEntry || submitting) return
+    if (!rating && !reviewText.trim()) {
+      toast.error('Please provide at least a rating or review text')
+      return
+    }
+
+    setSubmitting(true)
+    try {
+      const response = await fetch(`/api/reading-entries/${readingEntry.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          rating: rating || undefined,
+          review: reviewText.trim() || undefined,
+        }),
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || 'Failed to submit review')
+      }
+
+      setShowReviewForm(false)
+      await fetchBookDetails()
+      toast.success('Review submitted successfully!')
+    } catch (error: any) {
+      toast.error(error.message)
+    } finally {
+      setSubmitting(false)
     }
   }
 
@@ -356,26 +399,15 @@ export default function BookDetailPage() {
               <div className="bg-white rounded-lg border border-gray-200 p-6">
                 <h2 className="text-xl font-bold text-gray-900 mb-4">Your Entry</h2>
 
-                {/* Call to action for finished books without rating/review */}
-                {readingEntry.status === 'FINISHED' && !readingEntry.rating && !readingEntry.review && (
-                  <div className="mb-4 bg-gradient-to-r from-indigo-50 to-purple-50 border-2 border-indigo-200 rounded-lg p-6">
-                    <div className="flex items-start gap-3">
-                      <svg className="w-6 h-6 text-indigo-600 flex-shrink-0 mt-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-                      </svg>
-                      <div className="flex-1">
-                        <h3 className="font-bold text-indigo-900 mb-1">Share your thoughts!</h3>
-                        <p className="text-sm text-indigo-700 mb-3">
-                          You've finished this book. Help other readers by rating and reviewing it.
-                        </p>
-                        <Link
-                          href="/dashboard"
-                          className="inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg transition"
-                        >
-                          Add Rating & Review
-                        </Link>
-                      </div>
-                    </div>
+                {/* Edit button for finished books with rating/review */}
+                {readingEntry.status === 'FINISHED' && (readingEntry.rating || readingEntry.review) && (
+                  <div className="mb-4">
+                    <Link
+                      href="/dashboard"
+                      className="inline-block bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-medium py-2 px-4 rounded-lg transition"
+                    >
+                      Edit Rating & Review
+                    </Link>
                   </div>
                 )}
 
@@ -426,6 +458,115 @@ export default function BookDetailPage() {
                       ></div>
                     </div>
                   </div>
+                )}
+              </div>
+            )}
+
+            {/* Write/Edit Review Section */}
+            {readingEntry && readingEntry.status === 'FINISHED' && (
+              <div className="bg-white rounded-lg border border-gray-200 p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-xl font-bold text-gray-900">
+                    {readingEntry.rating || readingEntry.review ? 'Your Review' : 'Share Your Review'}
+                  </h2>
+                  {!showReviewForm ? (
+                    <button
+                      onClick={() => setShowReviewForm(true)}
+                      className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg transition"
+                    >
+                      {readingEntry.rating || readingEntry.review ? 'Edit Review' : 'Write Review'}
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => {
+                        setShowReviewForm(false)
+                        // Reset to existing values
+                        setRating(readingEntry.rating || 0)
+                        setReviewText(readingEntry.review || '')
+                      }}
+                      className="bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2 px-4 rounded-lg transition"
+                    >
+                      Cancel
+                    </button>
+                  )}
+                </div>
+
+                {showReviewForm ? (
+                  <div>
+                    {/* Rating */}
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Rating (out of 10)
+                      </label>
+                      <div className="flex gap-2">
+                        {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((star) => (
+                          <button
+                            key={star}
+                            type="button"
+                            onClick={() => setRating(star)}
+                            className="focus:outline-none transition-transform hover:scale-110"
+                          >
+                            <svg
+                              className={`w-8 h-8 ${
+                                star <= rating ? 'text-yellow-400 fill-current' : 'text-gray-300'
+                              }`}
+                              fill={star <= rating ? 'currentColor' : 'none'}
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
+                              />
+                            </svg>
+                          </button>
+                        ))}
+                        {rating > 0 && (
+                          <span className="ml-2 text-lg font-semibold text-gray-700">
+                            {rating}/10
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Review Text */}
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Review
+                      </label>
+                      <textarea
+                        value={reviewText}
+                        onChange={(e) => setReviewText(e.target.value)}
+                        rows={5}
+                        placeholder="Share your thoughts about this book..."
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none resize-none"
+                      />
+                    </div>
+
+                    <button
+                      onClick={handleSubmitReview}
+                      disabled={submitting || (!rating && !reviewText.trim())}
+                      className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-6 rounded-lg transition disabled:opacity-50"
+                    >
+                      {submitting ? 'Submitting...' : 'Submit Review'}
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    {!readingEntry.rating && !readingEntry.review && (
+                      <div className="text-center py-8 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg">
+                        <svg className="w-12 h-12 text-indigo-400 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                        </svg>
+                        <h3 className="text-lg font-semibold text-gray-900 mb-2">Share your thoughts!</h3>
+                        <p className="text-gray-600 mb-4">
+                          You've finished this book. Help other readers by rating and reviewing it.
+                        </p>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             )}
