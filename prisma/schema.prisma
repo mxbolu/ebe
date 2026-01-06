@@ -111,6 +111,7 @@ model User {
   clubBooksAdded    BookClubBook[]
   notifications     Notification[]
   searchHistory     SearchHistory[]
+  createdMeetings   BookClubMeeting[] @relation("CreatedMeetings")
 
   @@index([email])
   @@index([username])
@@ -600,6 +601,7 @@ model BookClub {
   currentRead       BookClubBook?    @relation("CurrentRead")
   books             BookClubBook[]
   discussions       BookClubDiscussion[]
+  meetings          BookClubMeeting[]
 
   @@index([createdById])
   @@index([isPublic])
@@ -665,6 +667,31 @@ model BookClubDiscussion {
   @@index([userId])
   @@index([createdAt])
   @@index([replyToId])
+}
+
+model BookClubMeeting {
+  id                String    @id @default(cuid())
+  bookClubId        String
+  title             String
+  description       String?   @db.Text
+  scheduledAt       DateTime
+  duration          Int       // Duration in minutes
+  agoraChannelName  String    // Agora channel name
+  agoraAppId        String?   // Store app ID for reference
+  recordingUrl      String?   // Recording URL if available
+  status            String    @default("scheduled") // scheduled, in_progress, completed, cancelled
+  createdById       String
+
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  // Relations
+  bookClub          BookClub  @relation(fields: [bookClubId], references: [id], onDelete: Cascade)
+  createdBy         User      @relation("CreatedMeetings", fields: [createdById], references: [id])
+
+  @@index([bookClubId])
+  @@index([scheduledAt])
+  @@index([status])
 }
 
 // ============================================
