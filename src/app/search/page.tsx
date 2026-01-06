@@ -37,6 +37,18 @@ function SearchPageContent() {
     createdAt: string
   }>>([])
   const [showHistory, setShowHistory] = useState(false)
+  const [autocomplete, setAutocomplete] = useState<Array<{
+    id: string
+    title: string
+    authors: string[]
+    coverImageUrl?: string
+    publishedYear?: number
+    averageRating?: number
+    matchType: 'title' | 'author'
+    matchText: string
+  }>>([])
+  const [showAutocomplete, setShowAutocomplete] = useState(false)
+  const [autocompleteLoading, setAutocompleteLoading] = useState(false)
   const [filters, setFilters] = useState({
     genre: '',
     minYear: '',
@@ -95,6 +107,38 @@ function SearchPageContent() {
       console.error('Logout failed:', error)
     }
   }
+
+  // Debounced autocomplete fetch
+  useEffect(() => {
+    const fetchAutocomplete = async () => {
+      if (query.trim().length < 2) {
+        setAutocomplete([])
+        setShowAutocomplete(false)
+        return
+      }
+
+      try {
+        setAutocompleteLoading(true)
+        const response = await fetch(
+          `/api/books/autocomplete?q=${encodeURIComponent(query)}`
+        )
+
+        if (response.ok) {
+          const data = await response.json()
+          setAutocomplete(data.suggestions)
+          setShowAutocomplete(data.suggestions.length > 0)
+        }
+      } catch (error) {
+        console.error('Autocomplete error:', error)
+      } finally {
+        setAutocompleteLoading(false)
+      }
+    }
+
+    // Debounce autocomplete requests
+    const timer = setTimeout(fetchAutocomplete, 300)
+    return () => clearTimeout(timer)
+  }, [query])
 
   const fetchBooks = useCallback(async (searchQuery: string, pageNum: number = 1, resetResults: boolean = true) => {
     if (!searchQuery.trim()) return
@@ -170,18 +214,19 @@ function SearchPageContent() {
     }
   }, [searchParams, fetchBooks])
 
-  // Close search history dropdown when clicking outside
+  // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target as HTMLElement
-      if (showHistory && !target.closest('.search-history-container')) {
+      if (!target.closest('.search-history-container')) {
         setShowHistory(false)
+        setShowAutocomplete(false)
       }
     }
 
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [showHistory])
+  }, [])
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
@@ -232,8 +277,16 @@ function SearchPageContent() {
                 <input
                   type="text"
                   value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  onFocus={() => setShowHistory(true)}
+                  onChange={(e) => {
+                    setQuery(e.target.value)
+                    setShowHistory(false) // Hide history when typing
+                  }}
+                  onFocus={() => {
+                    if (!query.trim()) {
+                      setShowHistory(true)
+                      setShowAutocomplete(false)
+                    }
+                  }}
                   placeholder="Search by title, author, or ISBN..."
                   className="w-full px-6 py-4 border-2 border-white/30 bg-white/20 backdrop-blur-sm rounded-xl focus:ring-4 focus:ring-white/50 focus:border-white text-white placeholder-white/70 outline-none text-lg font-medium"
                 />
@@ -278,6 +331,71 @@ function SearchPageContent() {
                             </div>
                           </div>
                         </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Autocomplete Dropdown */}
+                {showAutocomplete && autocomplete.length > 0 && (
+                  <div className="absolute top-full left-0 right-0 mt-2 bg-white/95 backdrop-blur-md rounded-xl shadow-2xl border-2 border-white/50 overflow-hidden z-50 max-h-96 overflow-y-auto">
+                    <div className="p-3 bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-between">
+                      <span className="text-white font-bold text-sm">Suggestions</span>
+                      <button
+                        type="button"
+                        onClick={() => setShowAutocomplete(false)}
+                        className="text-white/80 hover:text-white text-sm font-medium"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                    <div className="divide-y divide-gray-100">
+                      {autocomplete.map((suggestion) => (
+                        <Link
+                          key={suggestion.id}
+                          href={`/books/${suggestion.id}`}
+                          className="flex items-center gap-3 px-4 py-3 hover:bg-purple-50 transition-colors group"
+                          onClick={() => setShowAutocomplete(false)}
+                        >
+                          {suggestion.coverImageUrl ? (
+                            <img
+                              src={suggestion.coverImageUrl}
+                              alt={suggestion.title}
+                              className="w-12 h-16 object-cover rounded shadow-sm"
+                            />
+                          ) : (
+                            <div className="w-12 h-16 bg-gradient-to-br from-purple-400 to-pink-400 rounded flex items-center justify-center">
+                              <svg className="w-6 h-6 text-white opacity-50" fill="currentColor" viewBox="0 0 20 20">
+                                <path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z" />
+                              </svg>
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <div className="text-gray-900 font-medium group-hover:text-purple-600 truncate">
+                              {suggestion.title}
+                            </div>
+                            <div className="text-sm text-gray-600 truncate">
+                              {suggestion.matchType === 'author' ? (
+                                <span className="text-purple-600 font-medium">{suggestion.matchText}</span>
+                              ) : (
+                                suggestion.authors.join(', ')
+                              )}
+                            </div>
+                            {suggestion.publishedYear && (
+                              <div className="text-xs text-gray-500">
+                                {suggestion.publishedYear}
+                                {suggestion.averageRating && (
+                                  <span className="ml-2">
+                                    ⭐ {suggestion.averageRating.toFixed(1)}
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                          <div className="text-xs text-gray-400 uppercase font-medium px-2 py-1 bg-purple-100 rounded">
+                            {suggestion.matchType === 'title' ? 'Title' : 'Author'}
+                          </div>
+                        </Link>
                       ))}
                     </div>
                   </div>
