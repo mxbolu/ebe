@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import BookSearch from '@/components/BookSearch'
 import ReadingLists from '@/components/ReadingLists'
+import ActivityFeed from '@/components/ActivityFeed'
+import ReadingGoalWidget from '@/components/ReadingGoalWidget'
 
 export default function DashboardPage() {
   const router = useRouter()
@@ -124,6 +126,12 @@ export default function DashboardPage() {
             >
               Book Clubs
             </button>
+            <button
+              onClick={() => router.push('/challenges')}
+              className="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 font-medium text-sm transition"
+            >
+              Challenges
+            </button>
           </nav>
         </div>
       </div>
@@ -131,9 +139,18 @@ export default function DashboardPage() {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {activeTab === 'mybooks' ? (
-          <>
-            <ReadingLists />
-          </>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Main Content - Left Column */}
+            <div className="lg:col-span-2 space-y-6">
+              <ReadingLists />
+            </div>
+
+            {/* Sidebar - Right Column */}
+            <div className="lg:col-span-1 space-y-6">
+              <ReadingGoalWidget />
+              <ActivityFeed />
+            </div>
+          </div>
         ) : (
           <BookSearch />
         )}
