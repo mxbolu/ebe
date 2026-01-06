@@ -3,6 +3,9 @@ import { z } from 'zod'
 import prisma from '@/lib/prisma'
 import { authenticateRequest } from '@/lib/auth/middleware'
 import { checkAllBadges, updateReadingStreak } from '@/lib/badges'
+import { updateChallengeProgress } from '@/lib/challenges'
+import { updateReadingGoal } from '@/lib/reading-goals'
+import { logFinishedBook } from '@/lib/activity'
 
 const rereadSchema = z.object({
   rating: z.number().min(1.0).max(10.0).nullable().optional(),
@@ -88,31 +91,14 @@ export async function POST(
       },
     })
 
-    // Update reading goal count
-    const year = newFinishDate.getFullYear()
-    const currentBooks = await prisma.readingEntry.count({
-      where: {
-        userId: user.userId,
-        status: 'FINISHED',
-        finishDate: {
-          gte: new Date(`${year}-01-01`),
-          lt: new Date(`${year + 1}-01-01`),
-        },
-      },
-    })
+    // Log activity
+    const bookAuthor = entry.book.authors?.[0] || 'Unknown Author'
+    await logFinishedBook(user.userId, entry.book.id, entry.book.title, bookAuthor)
 
-    await prisma.readingGoal.updateMany({
-      where: {
-        userId: user.userId,
-        year,
-      },
-      data: {
-        currentBooks,
-      },
-    })
-
-    // Check for badges and update streak
+    // Update reading goals, challenge progress, badges, and streak
     await Promise.all([
+      updateReadingGoal(user.userId),
+      updateChallengeProgress(user.userId, entry.book.id),
       updateReadingStreak(user.userId),
       checkAllBadges(user.userId),
     ])

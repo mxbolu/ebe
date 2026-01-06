@@ -56,11 +56,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Count current finished books for this year
+    // Use finishDate when available, fall back to updatedAt for compatibility
     const currentBooks = await prisma.readingEntry.count({
       where: {
         userId: user.userId,
         status: 'FINISHED',
-        updatedAt: {
+        finishDate: {
           gte: new Date(year, 0, 1),
           lt: new Date(year + 1, 0, 1),
         },

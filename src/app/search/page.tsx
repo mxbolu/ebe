@@ -28,6 +28,7 @@ function SearchPageContent() {
   const [hasMore, setHasMore] = useState(false)
   const [page, setPage] = useState(1)
   const [user, setUser] = useState<any>(null)
+  const [genres, setGenres] = useState<Array<{ name: string; count: number }>>([])
   const [filters, setFilters] = useState({
     genre: '',
     minYear: '',
@@ -48,7 +49,21 @@ function SearchPageContent() {
         console.error('Auth check failed:', error)
       }
     }
+
+    const fetchGenres = async () => {
+      try {
+        const response = await fetch('/api/books/genres')
+        if (response.ok) {
+          const data = await response.json()
+          setGenres(data.genres)
+        }
+      } catch (error) {
+        console.error('Fetch genres failed:', error)
+      }
+    }
+
     checkAuth()
+    fetchGenres()
   }, [])
 
   const handleLogout = async () => {
@@ -152,14 +167,23 @@ function SearchPageContent() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
             <div>
               <label className="block text-sm font-bold text-white/90 mb-1.5">📚 Genre</label>
-              <input
-                type="text"
+              <select
                 value={filters.genre}
-                onChange={(e) => setFilters({ ...filters, genre: e.target.value })}
-                onBlur={handleFilterChange}
-                placeholder="e.g., Fiction"
-                className="w-full px-4 py-2.5 border border-white/20 bg-white/20 backdrop-blur-sm rounded-lg focus:ring-2 focus:ring-white/50 text-white placeholder-white/60 outline-none"
-              />
+                onChange={(e) => {
+                  setFilters({ ...filters, genre: e.target.value })
+                  if (query.trim()) {
+                    setTimeout(() => fetchBooks(query, 1, true), 100)
+                  }
+                }}
+                className="w-full px-4 py-2.5 border border-white/20 bg-white/20 backdrop-blur-sm rounded-lg focus:ring-2 focus:ring-white/50 text-white outline-none font-medium"
+              >
+                <option value="" className="text-gray-900">All Genres</option>
+                {genres.slice(0, 50).map((genre) => (
+                  <option key={genre.name} value={genre.name} className="text-gray-900">
+                    {genre.name} ({genre.count})
+                  </option>
+                ))}
+              </select>
             </div>
             <div>
               <label className="block text-sm font-bold text-white/90 mb-1.5">📅 Min Year</label>
