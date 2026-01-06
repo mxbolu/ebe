@@ -34,8 +34,8 @@ interface ReadingEntry {
   book: {
     id: string
     title: string
-    author: string
-    coverImage: string | null
+    authors: string[]
+    coverImageUrl: string | null
     publishedYear: number | null
   }
 }
@@ -49,8 +49,8 @@ interface Review {
   book: {
     id: string
     title: string
-    author: string
-    coverImage: string | null
+    authors: string[]
+    coverImageUrl: string | null
   }
 }
 
@@ -399,9 +399,9 @@ export default function UserProfilePage() {
                     className="group"
                   >
                     <div className="aspect-[2/3] bg-gray-200 rounded-lg overflow-hidden mb-2">
-                      {entry.book.coverImage ? (
+                      {entry.book.coverImageUrl ? (
                         <img
-                          src={entry.book.coverImage}
+                          src={entry.book.coverImageUrl}
                           alt={entry.book.title}
                           className="w-full h-full object-cover group-hover:scale-105 transition"
                         />
@@ -442,9 +442,9 @@ export default function UserProfilePage() {
                       {/* Book Cover */}
                       <Link href={`/books/${review.book.id}`} className="flex-shrink-0">
                         <div className="w-20 h-28 bg-gray-200 rounded overflow-hidden">
-                          {review.book.coverImage ? (
+                          {review.book.coverImageUrl ? (
                             <img
-                              src={review.book.coverImage}
+                              src={review.book.coverImageUrl}
                               alt={review.book.title}
                               className="w-full h-full object-cover"
                             />

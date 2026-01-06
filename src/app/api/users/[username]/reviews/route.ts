@@ -38,8 +38,8 @@ export async function GET(
           select: {
             id: true,
             title: true,
-            author: true,
-            coverImage: true,
+            authors: true,
+            coverImageUrl: true,
           },
         },
         helpfulMarks: {
