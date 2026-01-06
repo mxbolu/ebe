@@ -104,6 +104,7 @@ model User {
   userChallenges    UserChallenge[]
   readingStreak     ReadingStreak?
   reviewHelpfuls    ReviewHelpful[]
+  reviewComments    ReviewComment[]
   createdBookClubs  BookClub[]       @relation("CreatedBookClubs")
   bookClubMemberships BookClubMember[]
   clubDiscussions   BookClubDiscussion[]
@@ -296,6 +297,7 @@ model ReadingEntry {
   // Phase 3 Relations
   tags              ReadingEntryTag[]
   helpfulMarks      ReviewHelpful[]
+  comments          ReviewComment[]
 
   @@unique([userId, bookId]) // User can only have one entry per book
   @@index([userId])
@@ -497,6 +499,28 @@ model ReviewHelpful {
   @@unique([userId, readingEntryId])
   @@index([userId])
   @@index([readingEntryId])
+}
+
+model ReviewComment {
+  id                String    @id @default(cuid())
+  readingEntryId    String    // The review being commented on
+  userId            String
+  comment           String    @db.Text
+  parentId          String?   // For threaded replies
+
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  // Relations
+  readingEntry      ReadingEntry      @relation(fields: [readingEntryId], references: [id], onDelete: Cascade)
+  user              User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parent            ReviewComment?    @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies           ReviewComment[]   @relation("CommentReplies")
+
+  @@index([readingEntryId])
+  @@index([userId])
+  @@index([parentId])
+  @@index([createdAt])
 }
 
 // ============================================
