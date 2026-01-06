@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import ThreadedCommentSection from './ThreadedCommentSection'
 
 interface ReviewCardProps {
   review: {
@@ -18,10 +19,37 @@ interface ReviewCardProps {
   }
   currentUserId?: string
   onHelpfulClick?: (reviewId: string) => void
+  showComments?: boolean
 }
 
-export default function ReviewCard({ review, currentUserId, onHelpfulClick }: ReviewCardProps) {
+export default function ReviewCard({ review, currentUserId, onHelpfulClick, showComments = false }: ReviewCardProps) {
   const [marking, setMarking] = useState(false)
+  const [showCommentsSection, setShowCommentsSection] = useState(showComments)
+  const [comments, setComments] = useState<any[]>([])
+  const [commentCount, setCommentCount] = useState(0)
+  const [loadingComments, setLoadingComments] = useState(false)
+
+  useEffect(() => {
+    if (showCommentsSection) {
+      fetchComments()
+    }
+  }, [showCommentsSection])
+
+  const fetchComments = async () => {
+    setLoadingComments(true)
+    try {
+      const response = await fetch(`/api/reviews/${review.id}/comments`)
+      if (response.ok) {
+        const data = await response.json()
+        setComments(data.comments || [])
+        setCommentCount(data.totalCount || 0)
+      }
+    } catch (error) {
+      console.error('Failed to fetch comments:', error)
+    } finally {
+      setLoadingComments(false)
+    }
+  }
 
   const handleHelpful = async () => {
     if (!onHelpfulClick || marking) return
@@ -33,10 +61,14 @@ export default function ReviewCard({ review, currentUserId, onHelpfulClick }: Re
     }
   }
 
+  const toggleComments = () => {
+    setShowCommentsSection(!showCommentsSection)
+  }
+
   const isOwnReview = currentUserId === review.user.id
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-4 hover:shadow-md transition">
+    <div className="bg-white rounded-lg border border-gray-200 hover:shadow-md transition">
       {/* User Info */}
       <div className="flex items-start justify-between mb-3">
         <div className="flex items-center gap-3">
@@ -86,22 +118,52 @@ export default function ReviewCard({ review, currentUserId, onHelpfulClick }: Re
       )}
 
       {/* Actions */}
-      <div className="flex items-center gap-4 pt-3 border-t border-gray-100">
-        {!isOwnReview && currentUserId && onHelpfulClick && (
+      <div className="p-4">
+        <div className="flex items-center gap-4 pt-3 border-t border-gray-100">
           <button
-            onClick={handleHelpful}
-            disabled={marking}
-            className="flex items-center gap-1 text-sm text-gray-600 hover:text-indigo-600 transition disabled:opacity-50"
+            onClick={toggleComments}
+            className="flex items-center gap-1 text-sm text-gray-600 hover:text-indigo-600 transition"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
             </svg>
-            <span>Helpful {review.helpfulCount ? `(${review.helpfulCount})` : ''}</span>
+            <span>{commentCount} {commentCount === 1 ? 'comment' : 'comments'}</span>
           </button>
-        )}
 
-        {isOwnReview && (
-          <span className="text-xs text-gray-500 italic">Your review</span>
+          {!isOwnReview && currentUserId && onHelpfulClick && (
+            <button
+              onClick={handleHelpful}
+              disabled={marking}
+              className="flex items-center gap-1 text-sm text-gray-600 hover:text-indigo-600 transition disabled:opacity-50"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
+              </svg>
+              <span>Helpful {review.helpfulCount ? `(${review.helpfulCount})` : ''}</span>
+            </button>
+          )}
+
+          {isOwnReview && (
+            <span className="text-xs text-gray-500 italic">Your review</span>
+          )}
+        </div>
+
+        {/* Comments Section */}
+        {showCommentsSection && (
+          <div className="mt-4 pt-4 border-t border-gray-100">
+            {loadingComments ? (
+              <div className="text-center py-4 text-gray-500">
+                <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600"></div>
+              </div>
+            ) : (
+              <ThreadedCommentSection
+                reviewId={review.id}
+                comments={comments}
+                currentUserId={currentUserId}
+                onCommentAdded={fetchComments}
+              />
+            )}
+          </div>
         )}
       </div>
     </div>
