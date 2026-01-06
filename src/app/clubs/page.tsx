@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import BookClubCard from '@/components/BookClubCard'
 import CreateBookClubModal from '@/components/CreateBookClubModal'
 import MainNav from '@/components/MainNav'
+import PageHeader from '@/components/PageHeader'
 
 export default function BookClubsPage() {
   const router = useRouter()
@@ -68,93 +69,89 @@ export default function BookClubsPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-cyan-50 via-blue-50 to-indigo-50">
-      {/* Modern Navigation */}
       <MainNav user={user} onLogout={handleLogout} />
 
-      {/* Page Header */}
-      <div className="bg-gradient-to-r from-cyan-500 via-blue-500 to-indigo-600 text-white shadow-lg">
-        <div className="max-w-7xl mx-auto px-4 py-8">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h1 className="text-4xl font-black mb-2">👥 Book Clubs</h1>
-              <p className="text-cyan-100 text-lg">Connect with readers, discuss amazing books together!</p>
-            </div>
-            {user && (
-              <button
-                onClick={() => setShowCreateModal(true)}
-                className="bg-white text-indigo-600 hover:bg-cyan-50 font-bold py-3 px-6 rounded-xl transition-all duration-200 flex items-center gap-2 shadow-xl hover:shadow-2xl hover:scale-105"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                </svg>
-                Create Club
-              </button>
-            )}
-          </div>
-
-          {/* Search Bar */}
-          <div className="mb-4">
-            <div className="relative">
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="🔍 Search book clubs..."
-                className="w-full px-4 py-4 pl-12 border-2 border-white/30 bg-white/20 backdrop-blur-sm rounded-xl focus:ring-4 focus:ring-white/50 focus:border-white text-white placeholder-white/70 outline-none transition-all duration-200"
-              />
-              <svg
-                className="absolute left-4 top-4.5 w-5 h-5 text-white/70"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-            </div>
-          </div>
-
-          {/* Filter Tabs */}
-          <div className="flex gap-3 overflow-x-auto pb-2">
+      <PageHeader
+        title="Book Clubs"
+        description="Connect with readers, discuss amazing books together!"
+        icon="👥"
+        gradient="bg-gradient-to-r from-cyan-500 via-blue-500 to-indigo-600"
+        actions={
+          user ? (
             <button
-              onClick={() => setFilter('public')}
-              className={`px-5 py-2.5 rounded-xl font-bold text-sm whitespace-nowrap transition-all duration-200 ${
-                filter === 'public'
-                  ? 'bg-white text-indigo-600 shadow-lg scale-105'
-                  : 'bg-white/20 text-white hover:bg-white/30 backdrop-blur-sm'
-              }`}
+              onClick={() => setShowCreateModal(true)}
+              className="bg-white text-indigo-600 hover:bg-cyan-50 font-bold py-2 sm:py-3 px-4 sm:px-6 rounded-lg sm:rounded-xl transition-all duration-200 flex items-center gap-2 shadow-xl hover:shadow-2xl hover:scale-105 text-sm sm:text-base whitespace-nowrap"
             >
-              🌟 Discover
+              <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              <span className="hidden sm:inline">Create Club</span>
+              <span className="sm:hidden">Create</span>
             </button>
-            {user && (
-              <>
-                <button
-                  onClick={() => setFilter('joined')}
-                  className={`px-5 py-2.5 rounded-xl font-bold text-sm whitespace-nowrap transition-all duration-200 ${
-                    filter === 'joined'
-                      ? 'bg-white text-indigo-600 shadow-lg scale-105'
-                      : 'bg-white/20 text-white hover:bg-white/30 backdrop-blur-sm'
-                  }`}
-                >
-                  💙 My Clubs
-                </button>
-                <button
-                  onClick={() => setFilter('my-clubs')}
-                  className={`px-5 py-2.5 rounded-xl font-bold text-sm whitespace-nowrap transition-all duration-200 ${
-                    filter === 'my-clubs'
-                      ? 'bg-white text-indigo-600 shadow-lg scale-105'
-                      : 'bg-white/20 text-white hover:bg-white/30 backdrop-blur-sm'
-                  }`}
-                >
-                  ✨ Created by Me
-                </button>
-              </>
-            )}
-          </div>
-        </div>
-      </div>
+          ) : null
+        }
+      />
 
       {/* Content */}
-      <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-6 sm:py-8">
+        {/* Search Bar */}
+        <div className="mb-4 sm:mb-6">
+          <div className="relative">
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="🔍 Search book clubs..."
+              className="w-full px-4 py-3 sm:py-4 pl-10 sm:pl-12 border-2 border-indigo-200 bg-white rounded-lg sm:rounded-xl focus:ring-4 focus:ring-indigo-200 focus:border-indigo-500 text-gray-900 placeholder-gray-500 outline-none transition-all duration-200 shadow-sm"
+            />
+            <svg
+              className="absolute left-3 sm:left-4 top-3 sm:top-4 w-5 h-5 text-gray-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
+        </div>
+
+        {/* Filter Tabs */}
+        <div className="flex gap-2 sm:gap-3 overflow-x-auto pb-2 mb-6 scrollbar-hide">
+          <button
+            onClick={() => setFilter('public')}
+            className={`px-4 sm:px-5 py-2 sm:py-2.5 rounded-lg sm:rounded-xl font-bold text-xs sm:text-sm whitespace-nowrap transition-all duration-200 ${
+              filter === 'public'
+                ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg scale-105'
+                : 'bg-white text-gray-700 hover:bg-gray-50 border-2 border-gray-200'
+            }`}
+          >
+            🌟 Discover
+          </button>
+          {user && (
+            <>
+              <button
+                onClick={() => setFilter('joined')}
+                className={`px-4 sm:px-5 py-2 sm:py-2.5 rounded-lg sm:rounded-xl font-bold text-xs sm:text-sm whitespace-nowrap transition-all duration-200 ${
+                  filter === 'joined'
+                    ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg scale-105'
+                    : 'bg-white text-gray-700 hover:bg-gray-50 border-2 border-gray-200'
+                }`}
+              >
+                💙 My Clubs
+              </button>
+              <button
+                onClick={() => setFilter('my-clubs')}
+                className={`px-4 sm:px-5 py-2 sm:py-2.5 rounded-lg sm:rounded-xl font-bold text-xs sm:text-sm whitespace-nowrap transition-all duration-200 ${
+                  filter === 'my-clubs'
+                    ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-lg scale-105'
+                    : 'bg-white text-gray-700 hover:bg-gray-50 border-2 border-gray-200'
+                }`}
+              >
+                ✨ Created by Me
+              </button>
+            </>
+          )}
+        </div>
         {/* Error */}
         {error && (
           <div className="bg-red-100 border-2 border-red-300 text-red-800 px-6 py-4 rounded-xl mb-6 font-medium shadow-lg">
@@ -197,7 +194,7 @@ export default function BookClubsPage() {
 
         {/* Clubs Grid */}
         {!loading && clubs.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {clubs.map((club) => (
               <BookClubCard
                 key={club.id}

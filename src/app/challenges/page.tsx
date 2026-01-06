@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import MainNav from '@/components/MainNav'
+import PageHeader from '@/components/PageHeader'
 
 interface Challenge {
   id: string
@@ -133,21 +134,17 @@ export default function ChallengesPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-pink-50 to-purple-50">
-      {/* Modern Navigation */}
       <MainNav user={user} onLogout={handleLogout} />
 
-      {/* Page Header */}
-      <div className="bg-gradient-to-r from-orange-500 via-pink-500 to-purple-600 text-white shadow-lg">
-        <div className="max-w-7xl mx-auto px-4 py-10">
-          <h1 className="text-5xl font-black mb-3">🎯 Reading Challenges</h1>
-          <p className="text-orange-100 text-xl max-w-3xl">
-            Push your reading boundaries, compete with friends, and unlock achievements! 🏆
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        title="Reading Challenges"
+        description="Push your reading boundaries, compete with friends, and unlock achievements! 🏆"
+        icon="🎯"
+        gradient="bg-gradient-to-r from-orange-500 via-pink-500 to-purple-600"
+      />
 
       {/* Content */}
-      <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-6 sm:py-8">
         {error && (
           <div className="bg-red-100 border-2 border-red-300 text-red-800 px-6 py-4 rounded-xl mb-6 font-medium shadow-lg">
             ❌ {error}
@@ -166,7 +163,7 @@ export default function ChallengesPage() {
             <p className="text-gray-600 text-lg">Check back soon for exciting new reading challenges!</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {challenges.map((challenge) => {
               const userChallenge = challenge.userChallenges?.[0]
               const isJoined = !!userChallenge
@@ -176,26 +173,26 @@ export default function ChallengesPage() {
               return (
                 <div
                   key={challenge.id}
-                  className="bg-white rounded-2xl border-2 border-pink-100 overflow-hidden hover:shadow-2xl hover:scale-105 transition-all duration-200"
+                  className="bg-white rounded-xl sm:rounded-2xl border-2 border-pink-100 overflow-hidden hover:shadow-2xl transition-all duration-200 hover:scale-[1.02] sm:hover:scale-105"
                 >
                   {/* Challenge Header */}
-                  <div className={`p-6 text-white ${
+                  <div className={`p-4 sm:p-6 text-white ${
                     userChallenge?.isCompleted
                       ? 'bg-gradient-to-r from-green-500 to-emerald-600'
                       : active
                       ? 'bg-gradient-to-r from-orange-500 via-pink-500 to-purple-600'
                       : 'bg-gradient-to-r from-gray-500 to-gray-600'
                   }`}>
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="text-5xl">{getChallengeIcon(challenge.type)}</div>
+                    <div className="flex items-start justify-between mb-2 sm:mb-3">
+                      <div className="text-4xl sm:text-5xl">{getChallengeIcon(challenge.type)}</div>
                       {userChallenge?.isCompleted && (
-                        <div className="bg-white/30 backdrop-blur-sm text-white text-sm font-black px-3 py-1.5 rounded-lg shadow-md">
+                        <div className="bg-white/30 backdrop-blur-sm text-white text-xs sm:text-sm font-black px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg shadow-md">
                           ✓ Completed!
                         </div>
                       )}
                     </div>
-                    <h3 className="text-2xl font-black mb-1">{challenge.name}</h3>
-                    <p className="text-sm font-semibold text-white/80">{challenge.type.toUpperCase()} CHALLENGE</p>
+                    <h3 className="text-xl sm:text-2xl font-black mb-1 break-words">{challenge.name}</h3>
+                    <p className="text-xs sm:text-sm font-semibold text-white/80">{challenge.type.toUpperCase()} CHALLENGE</p>
                   </div>
 
                   {/* Challenge Body */}
