@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, Suspense } from 'react'
 import Link from 'next/link'
 import { useSearchParams, useRouter } from 'next/navigation'
+import MainNav from '@/components/MainNav'
 
 interface Book {
   id?: string
@@ -26,6 +27,7 @@ function SearchPageContent() {
   const [loading, setLoading] = useState(false)
   const [hasMore, setHasMore] = useState(false)
   const [page, setPage] = useState(1)
+  const [user, setUser] = useState<any>(null)
   const [filters, setFilters] = useState({
     genre: '',
     minYear: '',
@@ -33,6 +35,30 @@ function SearchPageContent() {
     minRating: '',
     sortBy: 'relevance',
   })
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const response = await fetch('/api/auth/me')
+        if (response.ok) {
+          const data = await response.json()
+          setUser(data.user)
+        }
+      } catch (error) {
+        console.error('Auth check failed:', error)
+      }
+    }
+    checkAuth()
+  }, [])
+
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' })
+      router.push('/login')
+    } catch (error) {
+      console.error('Logout failed:', error)
+    }
+  }
 
   const fetchBooks = useCallback(async (searchQuery: string, pageNum: number = 1, resetResults: boolean = true) => {
     if (!searchQuery.trim()) return
@@ -93,58 +119,61 @@ function SearchPageContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Search Header */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
-          <h1 className="text-3xl font-bold text-gray-900 mb-4">Search Books</h1>
+    <>
+      <MainNav user={user} onLogout={handleLogout} />
+      <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Search Header */}
+          <div className="bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-600 rounded-2xl shadow-2xl p-8 mb-6 text-white">
+            <h1 className="text-5xl font-black mb-3">🔍 Discover Books</h1>
+            <p className="text-emerald-100 text-lg mb-6">Find your next great read from millions of books!</p>
 
           {/* Search Form */}
           <form onSubmit={handleSearch} className="mb-6">
-            <div className="flex gap-2">
+            <div className="flex gap-3">
               <input
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search by title, author, or ISBN..."
-                className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none text-lg"
+                className="flex-1 px-6 py-4 border-2 border-white/30 bg-white/20 backdrop-blur-sm rounded-xl focus:ring-4 focus:ring-white/50 focus:border-white text-white placeholder-white/70 outline-none text-lg font-medium"
               />
               <button
                 type="submit"
                 disabled={loading}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-8 py-3 rounded-lg transition disabled:opacity-50"
+                className="bg-white text-teal-600 hover:bg-cyan-50 font-bold px-10 py-4 rounded-xl transition-all duration-200 disabled:opacity-50 shadow-xl hover:shadow-2xl hover:scale-105"
               >
-                {loading ? 'Searching...' : 'Search'}
+                {loading ? '🔄 Searching...' : '🔍 Search'}
               </button>
             </div>
           </form>
 
           {/* Filters */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Genre</label>
+              <label className="block text-sm font-bold text-white/90 mb-1.5">📚 Genre</label>
               <input
                 type="text"
                 value={filters.genre}
                 onChange={(e) => setFilters({ ...filters, genre: e.target.value })}
                 onBlur={handleFilterChange}
                 placeholder="e.g., Fiction"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
+                className="w-full px-4 py-2.5 border border-white/20 bg-white/20 backdrop-blur-sm rounded-lg focus:ring-2 focus:ring-white/50 text-white placeholder-white/60 outline-none"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Min Year</label>
+              <label className="block text-sm font-bold text-white/90 mb-1.5">📅 Min Year</label>
               <input
                 type="number"
                 value={filters.minYear}
                 onChange={(e) => setFilters({ ...filters, minYear: e.target.value })}
                 onBlur={handleFilterChange}
                 placeholder="e.g., 2000"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
+                className="w-full px-4 py-2.5 border border-white/20 bg-white/20 backdrop-blur-sm rounded-lg focus:ring-2 focus:ring-white/50 text-white placeholder-white/60 outline-none"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Min Rating</label>
+              <label className="block text-sm font-bold text-white/90 mb-1.5">⭐ Min Rating</label>
               <input
                 type="number"
                 step="0.1"
@@ -154,23 +183,23 @@ function SearchPageContent() {
                 onChange={(e) => setFilters({ ...filters, minRating: e.target.value })}
                 onBlur={handleFilterChange}
                 placeholder="e.g., 7.0"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
+                className="w-full px-4 py-2.5 border border-white/20 bg-white/20 backdrop-blur-sm rounded-lg focus:ring-2 focus:ring-white/50 text-white placeholder-white/60 outline-none"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Sort By</label>
+              <label className="block text-sm font-bold text-white/90 mb-1.5">🔢 Sort By</label>
               <select
                 value={filters.sortBy}
                 onChange={(e) => {
                   setFilters({ ...filters, sortBy: e.target.value })
                   handleFilterChange()
                 }}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent outline-none"
+                className="w-full px-4 py-2.5 border border-white/20 bg-white/20 backdrop-blur-sm rounded-lg focus:ring-2 focus:ring-white/50 text-white outline-none font-medium"
               >
-                <option value="relevance">Relevance</option>
-                <option value="rating">Rating</option>
-                <option value="year">Year</option>
-                <option value="title">Title</option>
+                <option value="relevance" className="text-gray-900">Relevance</option>
+                <option value="rating" className="text-gray-900">Rating</option>
+                <option value="year" className="text-gray-900">Year</option>
+                <option value="title" className="text-gray-900">Title</option>
               </select>
             </div>
           </div>
@@ -178,17 +207,18 @@ function SearchPageContent() {
 
         {/* Results */}
         {query && !loading && books.length === 0 && (
-          <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
-            <svg className="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No books found</h3>
-            <p className="text-gray-600">Try adjusting your search or filters</p>
+          <div className="bg-white/90 backdrop-blur-sm rounded-2xl border-2 border-dashed border-teal-200 p-16 text-center shadow-xl">
+            <div className="text-6xl mb-4">📚</div>
+            <h3 className="text-2xl font-bold text-gray-900 mb-2">No books found</h3>
+            <p className="text-gray-600 text-lg">Try adjusting your search or filters</p>
           </div>
         )}
 
         {books.length > 0 && (
           <div>
+            <div className="mb-4">
+              <p className="text-teal-700 font-semibold text-lg">Found {books.length} results</p>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
               {books.map((book, index) => (
                 <BookCard key={book.id || `${book.title}-${index}`} book={book} />
@@ -200,9 +230,9 @@ function SearchPageContent() {
                 <button
                   onClick={() => fetchBooks(query, page + 1, false)}
                   disabled={loading}
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-3 px-8 rounded-lg transition disabled:opacity-50"
+                  className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold py-4 px-10 rounded-xl transition-all duration-200 disabled:opacity-50 shadow-lg hover:shadow-2xl hover:scale-105"
                 >
-                  {loading ? 'Loading...' : 'Load More'}
+                  {loading ? '🔄 Loading...' : '📚 Load More Books'}
                 </button>
               </div>
             )}
@@ -210,16 +240,15 @@ function SearchPageContent() {
         )}
 
         {!query && (
-          <div className="bg-white rounded-lg border border-gray-200 p-12 text-center">
-            <svg className="mx-auto h-16 w-16 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-            <h3 className="text-xl font-medium text-gray-900 mb-2">Search for books</h3>
-            <p className="text-gray-600">Enter a title, author, or ISBN to get started</p>
+          <div className="bg-white/90 backdrop-blur-sm rounded-2xl border-2 border-dashed border-teal-200 p-16 text-center shadow-xl">
+            <div className="text-7xl mb-4">🔍</div>
+            <h3 className="text-3xl font-black text-gray-900 mb-3">Search for books</h3>
+            <p className="text-gray-600 text-lg">Enter a title, author, or ISBN to discover amazing books!</p>
           </div>
         )}
       </div>
     </div>
+    </>
   )
 }
 

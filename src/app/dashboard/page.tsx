@@ -6,6 +6,7 @@ import BookSearch from '@/components/BookSearch'
 import ReadingLists from '@/components/ReadingLists'
 import ActivityFeed from '@/components/ActivityFeed'
 import ReadingGoalWidget from '@/components/ReadingGoalWidget'
+import MainNav from '@/components/MainNav'
 
 export default function DashboardPage() {
   const router = useRouter()
@@ -45,8 +46,11 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-gray-600">Loading...</div>
+      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-indigo-200 border-t-indigo-600 mb-4"></div>
+          <p className="text-indigo-600 font-medium">Loading your books...</p>
+        </div>
       </div>
     )
   }
@@ -56,81 +60,33 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center">
-              <h1 className="text-2xl font-bold text-indigo-600">ebe</h1>
-              <span className="ml-4 text-sm text-gray-500">Reading Journal</span>
-            </div>
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50">
+      {/* Modern Navigation */}
+      <MainNav user={user} onLogout={handleLogout} />
 
-            <div className="flex items-center space-x-4">
-              {!user.isEmailVerified && (
-                <button
-                  type="button"
-                  onClick={() => router.push(`/verify-email?email=${encodeURIComponent(user.email)}`)}
-                  className="bg-yellow-50 border border-yellow-200 rounded-lg px-3 py-2 hover:bg-yellow-100 transition cursor-pointer"
-                >
-                  <p className="text-sm text-yellow-800 font-medium">
-                    Please verify your email - Click here
-                  </p>
-                </button>
-              )}
-
-              <div className="flex items-center space-x-3">
-                <div className="text-right">
-                  <p className="text-sm font-medium text-gray-900">{user.name || user.username}</p>
-                  <p className="text-xs text-gray-500">{user.email}</p>
-                </div>
-                <button
-                  onClick={handleLogout}
-                  className="text-sm text-gray-600 hover:text-gray-900 font-medium"
-                >
-                  Logout
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* Navigation Tabs */}
-      <div className="bg-white border-b border-gray-200">
+      {/* Sub-navigation Tabs */}
+      <div className="bg-white/80 backdrop-blur-sm border-b border-indigo-100 sticky top-16 z-40 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <nav className="flex space-x-8">
             <button
               onClick={() => setActiveTab('mybooks')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm transition ${
+              className={`py-4 px-1 border-b-2 font-semibold text-sm transition-all duration-200 ${
                 activeTab === 'mybooks'
-                  ? 'border-indigo-500 text-indigo-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  ? 'border-indigo-500 text-indigo-600 scale-105'
+                  : 'border-transparent text-gray-500 hover:text-indigo-600 hover:border-indigo-300'
               }`}
             >
-              My Books
+              📚 My Library
             </button>
             <button
               onClick={() => setActiveTab('search')}
-              className={`py-4 px-1 border-b-2 font-medium text-sm transition ${
+              className={`py-4 px-1 border-b-2 font-semibold text-sm transition-all duration-200 ${
                 activeTab === 'search'
-                  ? 'border-indigo-500 text-indigo-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  ? 'border-purple-500 text-purple-600 scale-105'
+                  : 'border-transparent text-gray-500 hover:text-purple-600 hover:border-purple-300'
               }`}
             >
-              Add Books
-            </button>
-            <button
-              onClick={() => router.push('/clubs')}
-              className="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 font-medium text-sm transition"
-            >
-              Book Clubs
-            </button>
-            <button
-              onClick={() => router.push('/challenges')}
-              className="py-4 px-1 border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 font-medium text-sm transition"
-            >
-              Challenges
+              ➕ Add Books
             </button>
           </nav>
         </div>

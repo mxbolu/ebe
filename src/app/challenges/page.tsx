@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import MainNav from '@/components/MainNav'
 
 interface Challenge {
   id: string
@@ -44,6 +45,15 @@ export default function ChallengesPage() {
       }
     } catch (error) {
       console.error('Auth check failed:', error)
+    }
+  }
+
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' })
+      router.push('/login')
+    } catch (error) {
+      console.error('Logout failed:', error)
     }
   }
 
@@ -122,74 +132,38 @@ export default function ChallengesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Top Navigation Bar */}
-      <header className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-6">
-              <button
-                onClick={() => router.push('/dashboard')}
-                className="flex items-center gap-2 hover:opacity-80 transition"
-              >
-                <h1 className="text-2xl font-bold text-indigo-600">ebe</h1>
-                <span className="text-sm text-gray-500">Reading Journal</span>
-              </button>
-              <nav className="flex space-x-6">
-                <button
-                  onClick={() => router.push('/dashboard')}
-                  className="text-sm text-gray-600 hover:text-gray-900 font-medium"
-                >
-                  My Books
-                </button>
-                <button
-                  onClick={() => router.push('/clubs')}
-                  className="text-sm text-gray-600 hover:text-gray-900 font-medium"
-                >
-                  Book Clubs
-                </button>
-                <span className="text-sm text-indigo-600 font-medium border-b-2 border-indigo-600 pb-1">
-                  Challenges
-                </span>
-              </nav>
-            </div>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-pink-50 to-purple-50">
+      {/* Modern Navigation */}
+      <MainNav user={user} onLogout={handleLogout} />
 
       {/* Page Header */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 py-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Reading Challenges</h1>
-          <p className="text-gray-600">Join challenges to push your reading boundaries and connect with other readers</p>
+      <div className="bg-gradient-to-r from-orange-500 via-pink-500 to-purple-600 text-white shadow-lg">
+        <div className="max-w-7xl mx-auto px-4 py-10">
+          <h1 className="text-5xl font-black mb-3">🎯 Reading Challenges</h1>
+          <p className="text-orange-100 text-xl max-w-3xl">
+            Push your reading boundaries, compete with friends, and unlock achievements! 🏆
+          </p>
         </div>
       </div>
 
       {/* Content */}
       <div className="max-w-7xl mx-auto px-4 py-8">
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
-            {error}
+          <div className="bg-red-100 border-2 border-red-300 text-red-800 px-6 py-4 rounded-xl mb-6 font-medium shadow-lg">
+            ❌ {error}
           </div>
         )}
 
         {loading ? (
-          <div className="text-center py-12">
-            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
-            <p className="mt-4 text-gray-600">Loading challenges...</p>
+          <div className="text-center py-16 bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl">
+            <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-pink-200 border-t-pink-600 mb-4"></div>
+            <p className="text-pink-600 font-semibold text-lg">Loading challenges...</p>
           </div>
         ) : challenges.length === 0 ? (
-          <div className="text-center py-12 bg-white rounded-lg border-2 border-dashed border-gray-300">
-            <svg
-              className="mx-auto h-12 w-12 text-gray-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
-            </svg>
-            <h3 className="mt-4 text-lg font-medium text-gray-900">No active challenges</h3>
-            <p className="mt-2 text-gray-500">Check back later for new reading challenges!</p>
+          <div className="text-center py-16 bg-white/90 backdrop-blur-sm rounded-2xl border-2 border-dashed border-pink-200 shadow-xl">
+            <div className="text-6xl mb-4">🎯</div>
+            <h3 className="text-2xl font-bold text-gray-900 mb-2">No active challenges</h3>
+            <p className="text-gray-600 text-lg">Check back soon for exciting new reading challenges!</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -202,30 +176,36 @@ export default function ChallengesPage() {
               return (
                 <div
                   key={challenge.id}
-                  className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-lg transition"
+                  className="bg-white rounded-2xl border-2 border-pink-100 overflow-hidden hover:shadow-2xl hover:scale-105 transition-all duration-200"
                 >
                   {/* Challenge Header */}
-                  <div className="bg-gradient-to-r from-indigo-500 to-purple-600 p-6 text-white">
-                    <div className="flex items-start justify-between mb-2">
-                      <div className="text-4xl">{getChallengeIcon(challenge.type)}</div>
+                  <div className={`p-6 text-white ${
+                    userChallenge?.isCompleted
+                      ? 'bg-gradient-to-r from-green-500 to-emerald-600'
+                      : active
+                      ? 'bg-gradient-to-r from-orange-500 via-pink-500 to-purple-600'
+                      : 'bg-gradient-to-r from-gray-500 to-gray-600'
+                  }`}>
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="text-5xl">{getChallengeIcon(challenge.type)}</div>
                       {userChallenge?.isCompleted && (
-                        <div className="bg-green-500 text-white text-xs font-bold px-2 py-1 rounded">
-                          ✓ Completed
+                        <div className="bg-white/30 backdrop-blur-sm text-white text-sm font-black px-3 py-1.5 rounded-lg shadow-md">
+                          ✓ Completed!
                         </div>
                       )}
                     </div>
-                    <h3 className="text-xl font-bold mb-1">{challenge.name}</h3>
-                    <p className="text-sm text-indigo-100">{challenge.type.toUpperCase()}</p>
+                    <h3 className="text-2xl font-black mb-1">{challenge.name}</h3>
+                    <p className="text-sm font-semibold text-white/80">{challenge.type.toUpperCase()} CHALLENGE</p>
                   </div>
 
                   {/* Challenge Body */}
                   <div className="p-6">
-                    <p className="text-gray-700 mb-4 leading-relaxed">{challenge.description}</p>
+                    <p className="text-gray-700 mb-4 leading-relaxed font-medium">{challenge.description}</p>
 
                     {/* Target */}
-                    <div className="bg-gray-50 rounded-lg p-3 mb-4">
-                      <div className="text-sm text-gray-600 mb-1">Target</div>
-                      <div className="text-2xl font-bold text-gray-900">
+                    <div className="bg-gradient-to-r from-orange-50 to-pink-50 rounded-xl p-4 mb-4 border border-pink-200">
+                      <div className="text-sm font-bold text-pink-600 mb-1">🎯 TARGET</div>
+                      <div className="text-3xl font-black bg-gradient-to-r from-orange-600 to-pink-600 bg-clip-text text-transparent">
                         {challenge.targetValue}
                         {challenge.type === 'pages' ? ' pages' : ' books'}
                       </div>
@@ -235,47 +215,52 @@ export default function ChallengesPage() {
                     {isJoined && userChallenge && (
                       <div className="mb-4">
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm font-medium text-gray-700">Your Progress</span>
-                          <span className="text-sm text-gray-600">
+                          <span className="text-sm font-bold text-gray-800">📊 Your Progress</span>
+                          <span className="text-sm font-bold text-pink-600">
                             {userChallenge.currentValue} / {challenge.targetValue}
                           </span>
                         </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div className="w-full bg-gray-200 rounded-full h-3">
                           <div
-                            className="bg-indigo-600 h-2 rounded-full transition-all duration-300"
+                            className="bg-gradient-to-r from-orange-500 to-pink-500 h-3 rounded-full transition-all duration-500 shadow-md"
                             style={{
                               width: `${Math.min((userChallenge.currentValue / challenge.targetValue) * 100, 100)}%`,
                             }}
                           ></div>
                         </div>
+                        <div className="text-xs font-semibold text-gray-600 mt-1 text-right">
+                          {Math.round((userChallenge.currentValue / challenge.targetValue) * 100)}% complete
+                        </div>
                       </div>
                     )}
 
                     {/* Dates */}
-                    <div className="flex items-center justify-between text-xs text-gray-500 mb-4">
+                    <div className="flex items-center justify-between text-xs font-semibold text-gray-600 mb-4 bg-gray-50 rounded-lg p-3">
                       <div>
-                        <span className="font-medium">Starts:</span> {formatDate(challenge.startDate)}
+                        <span className="block text-[10px] text-gray-500">STARTS</span>
+                        {formatDate(challenge.startDate)}
                       </div>
-                      <div>
-                        <span className="font-medium">Ends:</span> {formatDate(challenge.endDate)}
+                      <div className="text-right">
+                        <span className="block text-[10px] text-gray-500">ENDS</span>
+                        {formatDate(challenge.endDate)}
                       </div>
                     </div>
 
                     {/* Status Badge */}
                     {active && daysRemaining > 0 && (
-                      <div className="mb-4 text-sm">
-                        <span className="inline-block bg-green-100 text-green-800 px-2 py-1 rounded">
-                          🔥 {daysRemaining} {daysRemaining === 1 ? 'day' : 'days'} remaining
+                      <div className="mb-4">
+                        <span className="inline-block bg-gradient-to-r from-green-500 to-emerald-500 text-white text-sm font-bold px-4 py-2 rounded-lg shadow-md">
+                          🔥 {daysRemaining} {daysRemaining === 1 ? 'day' : 'days'} left!
                         </span>
                       </div>
                     )}
 
                     {/* Participants */}
-                    <div className="flex items-center gap-2 text-sm text-gray-600 mb-4">
-                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <div className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-4 bg-indigo-50 rounded-lg p-3">
+                      <svg className="w-5 h-5 text-indigo-600" fill="currentColor" viewBox="0 0 20 20">
                         <path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z" />
                       </svg>
-                      <span>{challenge._count.userChallenges} {challenge._count.userChallenges === 1 ? 'participant' : 'participants'}</span>
+                      <span className="text-indigo-700">{challenge._count.userChallenges} {challenge._count.userChallenges === 1 ? 'participant' : 'participants'}</span>
                     </div>
 
                     {/* Join/Leave Button */}
@@ -283,28 +268,28 @@ export default function ChallengesPage() {
                       <button
                         onClick={() => handleJoinLeave(challenge.id, isJoined)}
                         disabled={!active || userChallenge?.isCompleted}
-                        className={`w-full font-medium py-2 px-4 rounded-lg transition ${
+                        className={`w-full font-bold py-3 px-4 rounded-xl transition-all duration-200 shadow-md ${
                           isJoined
-                            ? 'bg-gray-100 hover:bg-gray-200 text-gray-700'
-                            : 'bg-indigo-600 hover:bg-indigo-700 text-white'
+                            ? 'bg-gray-100 hover:bg-gray-200 text-gray-800 hover:shadow-lg'
+                            : 'bg-gradient-to-r from-orange-500 to-pink-500 hover:from-orange-600 hover:to-pink-600 text-white hover:shadow-2xl hover:scale-105'
                         } disabled:opacity-50 disabled:cursor-not-allowed`}
                       >
                         {!active
-                          ? 'Challenge Ended'
+                          ? '⏰ Challenge Ended'
                           : userChallenge?.isCompleted
-                          ? 'Completed'
+                          ? '🏆 Completed!'
                           : isJoined
-                          ? 'Leave Challenge'
-                          : 'Join Challenge'}
+                          ? '👋 Leave Challenge'
+                          : '🚀 Join Challenge'}
                       </button>
                     )}
 
                     {!user && (
                       <button
                         onClick={() => router.push('/login')}
-                        className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-lg transition"
+                        className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold py-3 px-4 rounded-xl transition-all duration-200 shadow-md hover:shadow-2xl hover:scale-105"
                       >
-                        Sign In to Join
+                        🔐 Sign In to Join
                       </button>
                     )}
                   </div>
